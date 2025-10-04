@@ -10,22 +10,22 @@ import (
 
 // TaskHandler handles HTTP requests for tasks
 type TaskHandler struct {
-	createTask      *usecases.CreateTaskUseCase
-	updateTask      *usecases.UpdateTaskUseCase
-	deleteTask      *usecases.DeleteTaskUseCase
-	getTask         *usecases.GetTaskUseCase
-	listTasks       *usecases.ListTasksUseCase
-	listSharedTasks *usecases.ListSharedTasksUseCase
+	createTask      usecases.CreateTaskUseCaseInterface
+	updateTask      usecases.UpdateTaskUseCaseInterface
+	deleteTask      usecases.DeleteTaskUseCaseInterface
+	getTask         usecases.GetTaskUseCaseInterface
+	listTasks       usecases.ListTasksUseCaseInterface
+	listSharedTasks usecases.ListSharedTasksUseCaseInterface
 }
 
 // NewTaskHandler creates a new TaskHandler
 func NewTaskHandler(
-	createTask *usecases.CreateTaskUseCase,
-	updateTask *usecases.UpdateTaskUseCase,
-	deleteTask *usecases.DeleteTaskUseCase,
-	getTask *usecases.GetTaskUseCase,
-	listTasks *usecases.ListTasksUseCase,
-	listSharedTasks *usecases.ListSharedTasksUseCase,
+	createTask usecases.CreateTaskUseCaseInterface,
+	updateTask usecases.UpdateTaskUseCaseInterface,
+	deleteTask usecases.DeleteTaskUseCaseInterface,
+	getTask usecases.GetTaskUseCaseInterface,
+	listTasks usecases.ListTasksUseCaseInterface,
+	listSharedTasks usecases.ListSharedTasksUseCaseInterface,
 ) *TaskHandler {
 	return &TaskHandler{
 		createTask:      createTask,
