@@ -1,0 +1,66 @@
+{{ define "content" }}
+<div class="px-4 py-6">
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Minhas Tarefas</h2>
+
+        <!-- Create Task Form -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Nova Tarefa</h3>
+            <form hx-post="/web/tasks" hx-target="#task-list" hx-swap="afterbegin"
+                  hx-headers='{"X-User-ID": "user-1"}' class="space-y-4">
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
+                    <input type="text" id="title" name="title" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Descrição</label>
+                    <textarea id="description" name="description" rows="3"
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border"></textarea>
+                </div>
+                <button type="submit"
+                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Criar Tarefa
+                </button>
+            </form>
+        </div>
+
+        <!-- Task List -->
+        <div id="task-list" class="space-y-4">
+            {{ range .Tasks }}
+            <div class="bg-white shadow rounded-lg p-6" id="task-{{ .ID }}">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900">{{ .Title }}</h3>
+                        <p class="text-gray-600 mt-1">{{ .Description }}</p>
+                        <div class="mt-2 flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {{ if eq .Status "pending" }}bg-yellow-100 text-yellow-800
+                                {{ else if eq .Status "in_progress" }}bg-blue-100 text-blue-800
+                                {{ else }}bg-green-100 text-green-800{{ end }}">
+                                {{ if eq .Status "pending" }}Pendente
+                                {{ else if eq .Status "in_progress" }}Em Progresso
+                                {{ else }}Concluída{{ end }}
+                            </span>
+                            <span class="text-sm text-gray-500">{{ .CreatedAt.Format "02/01/2006 15:04" }}</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2 ml-4">
+                        <button hx-delete="/web/tasks/{{ .ID }}" hx-target="#task-{{ .ID }}" hx-swap="outerHTML"
+                                hx-headers='{"X-User-ID": "user-1"}'
+                                hx-confirm="Tem certeza que deseja excluir esta tarefa?"
+                                class="text-red-600 hover:text-red-800">
+                            Excluir
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {{ else }}
+            <div class="bg-white shadow rounded-lg p-6 text-center text-gray-500">
+                Nenhuma tarefa encontrada. Crie sua primeira tarefa acima!
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</div>
+{{ end }}

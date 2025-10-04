@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "Bash(go test:*)",
+      "Bash(curl -OL https://go.dev/dl/go1.24.5.linux-amd64.tar.gz)",
+      "Bash(sudo tar:*)",
+      "Bash(export PATH=$PATH:~/go/go/bin)",
+      "Bash(go get:*)",
+      "Bash(go build:*)",
+      "Bash(./todo-app)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
