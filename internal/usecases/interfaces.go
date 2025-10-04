@@ -60,3 +60,13 @@ type ShareTaskUseCaseInterface interface {
 type ExportTasksPDFUseCaseInterface interface {
 	Execute(ctx context.Context, ownerID string) ([]byte, error)
 }
+
+// DeleteTaskImageUseCaseInterface defines the interface for deleting task images
+type DeleteTaskImageUseCaseInterface interface {
+	Execute(ctx context.Context, taskID, userID string) (string, error)
+}
+
+// ReplaceTaskImageUseCaseInterface defines the interface for replacing task images
+type ReplaceTaskImageUseCaseInterface interface {
+	Execute(ctx context.Context, taskID, userID, newImagePath string) (string, error)
+}

@@ -48,6 +48,8 @@ func main() {
 	shareTask := usecases.NewShareTaskUseCase(taskRepo, shareRepo, taskService)
 	exportTasksPDF := usecases.NewExportTasksPDFUseCase(taskRepo)
 	_ = usecases.NewUnshareTaskUseCase(shareRepo, taskService)            // unshareTask for future use
+	deleteTaskImage := usecases.NewDeleteTaskImageUseCase(taskRepo, taskService)
+	replaceTaskImage := usecases.NewReplaceTaskImageUseCase(taskRepo, taskService)
 
 	// Auth use cases
 	loginUseCase := usecases.NewLoginUseCase(userRepo, jwtSecret)
@@ -64,7 +66,7 @@ func main() {
 	)
 
 	// Web handlers (for HTMX forms)
-	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask, completeTask, shareTask)
+	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask, completeTask, shareTask, deleteTaskImage, replaceTaskImage)
 
 	// Auth handlers
 	authHandler := handler.NewAuthHandler(loginUseCase, registerUseCase)
@@ -123,13 +125,15 @@ func main() {
 
 	// Web API routes (for HTMX - require JWT)
 	protectedWebAPIMux := http.NewServeMux()
-	protectedWebAPIMux.HandleFunc("POST /web/tasks", webTaskHandler.CreateTask)
-	protectedWebAPIMux.HandleFunc("POST /web/tasks/{id}/complete", webTaskHandler.CompleteTask)
-	protectedWebAPIMux.HandleFunc("POST /web/tasks/{id}/share", webTaskHandler.ShareTask)
-	protectedWebAPIMux.HandleFunc("DELETE /web/tasks/{id}", webTaskHandler.DeleteTask)
+	protectedWebAPIMux.HandleFunc("POST /tasks", webTaskHandler.CreateTask)
+	protectedWebAPIMux.HandleFunc("POST /tasks/{id}/complete", webTaskHandler.CompleteTask)
+	protectedWebAPIMux.HandleFunc("POST /tasks/{id}/share", webTaskHandler.ShareTask)
+	protectedWebAPIMux.HandleFunc("DELETE /tasks/{id}", webTaskHandler.DeleteTask)
+	protectedWebAPIMux.HandleFunc("DELETE /tasks/{id}/image", webTaskHandler.DeleteTaskImage)
+	protectedWebAPIMux.HandleFunc("PUT /tasks/{id}/image", webTaskHandler.ReplaceTaskImage)
 
-	mux.Handle("/web/tasks", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))
-	mux.Handle("/web/tasks/", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))
+	mux.Handle("/web/tasks", middleware.AuthMiddleware(jwtSecret)(http.StripPrefix("/web", protectedWebAPIMux)))
+	mux.Handle("/web/tasks/", middleware.AuthMiddleware(jwtSecret)(http.StripPrefix("/web", protectedWebAPIMux)))
 
 	// Upload route (protected with JWT)
 	uploadMux := http.NewServeMux()

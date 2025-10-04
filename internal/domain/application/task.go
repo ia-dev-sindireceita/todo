@@ -111,6 +111,40 @@ func (t *Task) CompleteTask() error {
 	return nil
 }
 
+// RemoveImage removes the image from the task
+func (t *Task) RemoveImage() error {
+	if t.Status == StatusCompleted {
+		return errors.New("cannot remove image from completed task")
+	}
+
+	if t.ImagePath == "" {
+		return errors.New("task has no image to remove")
+	}
+
+	t.ImagePath = ""
+	t.UpdatedAt = time.Now()
+	return nil
+}
+
+// ReplaceImage replaces the current image with a new one
+func (t *Task) ReplaceImage(newImagePath string) error {
+	if t.Status == StatusCompleted {
+		return errors.New("cannot replace image in completed task")
+	}
+
+	if newImagePath == "" {
+		return errors.New("new image path cannot be empty")
+	}
+
+	if len(newImagePath) > 500 {
+		return errors.New("image path cannot exceed 500 characters")
+	}
+
+	t.ImagePath = newImagePath
+	t.UpdatedAt = time.Now()
+	return nil
+}
+
 // isValidStatus checks if the status is valid
 func isValidStatus(status TaskStatus) bool {
 	return status == StatusPending || status == StatusInProgress || status == StatusCompleted
