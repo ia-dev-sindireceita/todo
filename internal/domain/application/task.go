@@ -89,6 +89,17 @@ func (t *Task) Update(title, description string, status TaskStatus) error {
 	return nil
 }
 
+// CompleteTask marks the task as completed
+func (t *Task) CompleteTask() error {
+	if t.Status == StatusCompleted {
+		return errors.New("task is already completed")
+	}
+
+	t.Status = StatusCompleted
+	t.UpdatedAt = time.Now()
+	return nil
+}
+
 // isValidStatus checks if the status is valid
 func isValidStatus(status TaskStatus) bool {
 	return status == StatusPending || status == StatusInProgress || status == StatusCompleted

@@ -41,6 +41,7 @@ func main() {
 	createTask := usecases.NewCreateTaskUseCase(taskRepo)
 	updateTask := usecases.NewUpdateTaskUseCase(taskRepo, taskService)
 	deleteTask := usecases.NewDeleteTaskUseCase(taskRepo, taskService)
+	completeTask := usecases.NewCompleteTaskUseCase(taskRepo, taskService)
 	getTask := usecases.NewGetTaskUseCase(taskRepo, taskService)
 	listTasks := usecases.NewListTasksUseCase(taskRepo)
 	listSharedTasks := usecases.NewListSharedTasksUseCase(taskRepo)
@@ -62,7 +63,7 @@ func main() {
 	)
 
 	// Web handlers (for HTMX forms)
-	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask)
+	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask, completeTask)
 
 	// Auth handlers
 	authHandler := handler.NewAuthHandler(loginUseCase, registerUseCase)
@@ -117,6 +118,8 @@ func main() {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/web/tasks":
 			webTaskHandler.CreateTask(w, r)
+		case r.Method == "POST" && len(r.URL.Path) > len("/web/tasks/") && r.URL.Path[len(r.URL.Path)-9:] == "/complete":
+			webTaskHandler.CompleteTask(w, r)
 		case r.Method == "DELETE" && len(r.URL.Path) > len("/web/tasks/"):
 			webTaskHandler.DeleteTask(w, r)
 		default:

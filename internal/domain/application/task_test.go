@@ -209,3 +209,62 @@ func TestTask_Update(t *testing.T) {
 		})
 	}
 }
+
+func TestTask_CompleteTask(t *testing.T) {
+	tests := []struct {
+		name    string
+		status  TaskStatus
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "should complete pending task",
+			status:  StatusPending,
+			wantErr: false,
+		},
+		{
+			name:    "should complete in_progress task",
+			status:  StatusInProgress,
+			wantErr: false,
+		},
+		{
+			name:    "should fail if task already completed",
+			status:  StatusCompleted,
+			wantErr: true,
+			errMsg:  "task is already completed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			task, _ := NewTask("task-1", "Test Task", "Description", tt.status, "user-1")
+			oldUpdatedAt := task.UpdatedAt
+
+			err := task.CompleteTask()
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("CompleteTask() expected error but got nil")
+					return
+				}
+				if err.Error() != tt.errMsg {
+					t.Errorf("CompleteTask() error = %v, want %v", err.Error(), tt.errMsg)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("CompleteTask() unexpected error: %v", err)
+			}
+
+			if task.Status != StatusCompleted {
+				t.Errorf("CompleteTask() status = %v, want %v", task.Status, StatusCompleted)
+			}
+
+			if !task.UpdatedAt.After(oldUpdatedAt) {
+				t.Errorf("CompleteTask() did not update UpdatedAt")
+			}
+		})
+	}
+}
+

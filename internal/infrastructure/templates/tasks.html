@@ -51,6 +51,12 @@
                         </div>
                     </div>
                     <div class="flex space-x-2 ml-4">
+                        {{ if ne .Status "completed" }}
+                        <button hx-post="/web/tasks/{{ .ID }}/complete" hx-target="#task-{{ .ID }}" hx-swap="outerHTML"
+                                class="text-green-600 hover:text-green-800 font-medium">
+                            Concluir
+                        </button>
+                        {{ end }}
                         <button hx-delete="/web/tasks/{{ .ID }}" hx-target="#task-{{ .ID }}" hx-swap="outerHTML"
                                 hx-confirm="Tem certeza que deseja excluir esta tarefa?"
                                 class="text-red-600 hover:text-red-800">
