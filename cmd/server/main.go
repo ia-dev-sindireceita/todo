@@ -114,20 +114,13 @@ func main() {
 	mux.Handle("/tasks", middleware.AuthMiddleware(jwtSecret)(protectedWebMux))
 
 	// Web API routes (for HTMX - require JWT)
-	protectedWebAPIHandler := middleware.AuthMiddleware(jwtSecret)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.Method == "POST" && r.URL.Path == "/web/tasks":
-			webTaskHandler.CreateTask(w, r)
-		case r.Method == "POST" && len(r.URL.Path) > len("/web/tasks/") && r.URL.Path[len(r.URL.Path)-9:] == "/complete":
-			webTaskHandler.CompleteTask(w, r)
-		case r.Method == "DELETE" && len(r.URL.Path) > len("/web/tasks/"):
-			webTaskHandler.DeleteTask(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	mux.Handle("/web/tasks", protectedWebAPIHandler)
-	mux.Handle("/web/tasks/", protectedWebAPIHandler)
+	protectedWebAPIMux := http.NewServeMux()
+	protectedWebAPIMux.HandleFunc("POST /web/tasks", webTaskHandler.CreateTask)
+	protectedWebAPIMux.HandleFunc("POST /web/tasks/{id}/complete", webTaskHandler.CompleteTask)
+	protectedWebAPIMux.HandleFunc("DELETE /web/tasks/{id}", webTaskHandler.DeleteTask)
+
+	mux.Handle("/web/tasks", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))
+	mux.Handle("/web/tasks/", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))
 
 	// Apply global middlewares
 	handler := middleware.Chain(
