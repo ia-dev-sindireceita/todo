@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -637,6 +638,32 @@ func TestWebShareTask_ShareButtonNotPresentInStaticTemplate(t *testing.T) {
 	// This test will fail until we implement the share button in tasks.html
 	// It's a placeholder to remind us to add the button to the static template
 	t.Skip("TODO: Add share button to tasks.html template")
+}
+
+// =============================================================================
+// Navigation Tests (for Issue #15)
+// =============================================================================
+
+func TestBaseTemplate_NoCompartilhadasLink(t *testing.T) {
+	// This test verifies that the base.html template does NOT contain
+	// the "Compartilhadas" link in the navigation bar
+	// Read the actual template file
+	content, err := os.ReadFile("../../../../internal/infrastructure/templates/base.html")
+	if err != nil {
+		t.Fatalf("Failed to read base.html: %v", err)
+	}
+
+	html := string(content)
+
+	// Verify that "Compartilhadas" link is NOT in the template
+	// The navigation bar should only contain "Minhas Tarefas"
+	if strings.Contains(html, "/tasks/shared") {
+		t.Error("base.html should NOT contain '/tasks/shared' link")
+	}
+
+	if strings.Contains(html, ">Compartilhadas<") {
+		t.Error("base.html should NOT contain 'Compartilhadas' link text")
+	}
 }
 
 // =============================================================================
