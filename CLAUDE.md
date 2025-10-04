@@ -50,42 +50,42 @@ Branch naming conventions:
 
 ### Build
 ```bash
-go build
+export PATH=$PATH:/usr/local/go/bin/ && go build
 ```
 
 ### Run
 ```bash
-go run .
+export PATH=$PATH:/usr/local/go/bin/ && go run .
 ```
 
 ### Test
 ```bash
 # Run all tests
-go test ./...
+export PATH=$PATH:/usr/local/go/bin/ && go test ./...
 
 # Run tests with verbose output
-go test -v ./...
+export PATH=$PATH:/usr/local/go/bin/ && go test -v ./...
 
 # Run a specific test
-go test -run TestName ./...
+export PATH=$PATH:/usr/local/go/bin/ && go test -run TestName ./...
 ```
 
 ### Dependencies
 ```bash
 # Add a dependency
-go get <package>
+export PATH=$PATH:/usr/local/go/bin/ && go get <package>
 
 # Tidy dependencies
-go mod tidy
+export PATH=$PATH:/usr/local/go/bin/ && go mod tidy
 ```
 
 ### Formatting and Linting
 ```bash
 # Format code
-go fmt ./...
+export PATH=$PATH:/usr/local/go/bin/ && go fmt ./...
 
 # Vet code
-go vet ./...
+export PATH=$PATH:/usr/local/go/bin/ && go vet ./...
 ```
 
 ## Architecture

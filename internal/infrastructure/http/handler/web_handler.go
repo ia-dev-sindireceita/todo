@@ -38,15 +38,34 @@ func (h *WebTaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse form data
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Invalid form data", http.StatusBadRequest)
-		return
+	// Parse multipart form (for file uploads)
+	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB max
+		// Fallback to regular form parsing if not multipart
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
 	}
 
 	title := r.FormValue("title")
 	description := r.FormValue("description")
-	imagePath := r.FormValue("image_path") // Will be populated later with upload functionality
+
+	var imagePath string
+
+	// Handle image upload if present
+	file, header, err := r.FormFile("image")
+	if err == nil {
+		defer file.Close()
+
+		// Process the image using upload handler logic
+		uploadHandler := NewUploadHandler("uploads/images")
+		path, err := uploadHandler.SaveImage(file, header)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		imagePath = path
+	}
 
 	// Create task
 	task, err := h.createTask.Execute(r.Context(), title, description, userID, imagePath)
