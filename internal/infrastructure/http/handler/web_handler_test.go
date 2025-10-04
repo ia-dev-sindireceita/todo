@@ -638,3 +638,89 @@ func TestWebShareTask_ShareButtonNotPresentInStaticTemplate(t *testing.T) {
 	// It's a placeholder to remind us to add the button to the static template
 	t.Skip("TODO: Add share button to tasks.html template")
 }
+
+// =============================================================================
+// Icon Tests (for Issue #13)
+// =============================================================================
+
+func TestTaskCard_ContainsIconsInButtons(t *testing.T) {
+	taskID := "task-with-icons"
+	ownerID := "user-1"
+
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+
+	html, err := renderTaskCard(task, ownerID)
+	if err != nil {
+		t.Fatalf("Failed to render task card: %v", err)
+	}
+
+	// Verify SVG icons are present
+	if !strings.Contains(html, "<svg") {
+		t.Error("Expected SVG icons in task card buttons")
+	}
+
+	// Verify Complete button has checkmark icon
+	if !strings.Contains(html, "M5 13l4 4L19 7") {
+		t.Error("Expected checkmark icon (path) in Complete button")
+	}
+
+	// Verify Share button has share icon (only for own tasks)
+	if !strings.Contains(html, "M8.684 13.342") {
+		t.Error("Expected share icon (path) in Share button")
+	}
+
+	// Verify Delete button has trash icon
+	if !strings.Contains(html, "M19 7l-.867 12.142") {
+		t.Error("Expected trash icon (path) in Delete button")
+	}
+}
+
+func TestTaskCard_CompletedTaskHasNoCompleteButton(t *testing.T) {
+	taskID := "completed-task"
+	ownerID := "user-1"
+
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusCompleted, ownerID)
+
+	html, err := renderTaskCard(task, ownerID)
+	if err != nil {
+		t.Fatalf("Failed to render task card: %v", err)
+	}
+
+	// Verify no Complete button for completed tasks
+	if strings.Contains(html, "Concluir") {
+		t.Error("Completed tasks should not have Complete button")
+	}
+
+	// Verify checkmark icon path is not present
+	if strings.Contains(html, "M5 13l4 4L19 7") {
+		t.Error("Completed tasks should not have checkmark icon in buttons")
+	}
+
+	// But should still have delete button with trash icon
+	if !strings.Contains(html, "M19 7l-.867 12.142") {
+		t.Error("Expected trash icon in Delete button for completed task")
+	}
+}
+
+func TestTaskCard_SharedTaskHasNoShareButton(t *testing.T) {
+	taskID := "shared-task"
+	ownerID := "user-1"
+	viewerID := "user-2"
+
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+
+	html, err := renderTaskCard(task, viewerID)
+	if err != nil {
+		t.Fatalf("Failed to render task card: %v", err)
+	}
+
+	// Verify no Share button for shared tasks
+	if strings.Contains(html, "Compartilhar") {
+		t.Error("Shared tasks should not have Share button")
+	}
+
+	// Verify share icon path is not present
+	if strings.Contains(html, "M8.684 13.342") {
+		t.Error("Shared tasks should not have share icon")
+	}
+}
