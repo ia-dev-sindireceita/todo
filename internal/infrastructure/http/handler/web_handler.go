@@ -53,7 +53,7 @@ func (h *WebTaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	// Return HTML fragment for HTMX
 	w.Header().Set("Content-Type", "text/html")
-	html, err := renderTaskCard(task)
+	html, err := renderTaskCard(task, userID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -94,7 +94,7 @@ func (h *WebTaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 
 	taskID := r.PathValue("id")
 
-	err := h.completeTask.Execute(r.Context(), taskID, userID)
+	task, err := h.completeTask.Execute(r.Context(), taskID, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -102,7 +102,7 @@ func (h *WebTaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 
 	// Return updated HTML fragment for HTMX with completed status
 	w.Header().Set("Content-Type", "text/html")
-	html, err := renderCompletedTask(taskID)
+	html, err := renderCompletedTask(task, userID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return

@@ -9,14 +9,16 @@ import (
 
 // TaskTemplateData holds data for rendering task HTML fragments
 type TaskTemplateData struct {
-	ID          string
-	Title       string
-	Description string
-	Status      string
-	StatusClass string
-	StatusText  string
-	CreatedAt   string
-	ShowComplete bool
+	ID             string
+	Title          string
+	Description    string
+	Status         string
+	StatusClass    string
+	StatusText     string
+	CreatedAt      string
+	ShowComplete   bool
+	OwnershipClass string
+	OwnershipText  string
 }
 
 var (
@@ -29,6 +31,9 @@ var (
 				<div class="mt-2 flex items-center space-x-2">
 					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{.StatusClass}}">
 						{{.StatusText}}
+					</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{.OwnershipClass}}">
+						{{.OwnershipText}}
 					</span>
 					<span class="text-sm text-gray-500">{{.CreatedAt}}</span>
 				</div>
@@ -57,6 +62,9 @@ var (
 					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
 						Concluída
 					</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{.OwnershipClass}}">
+						{{.OwnershipText}}
+					</span>
 					<span class="text-sm text-gray-500">Tarefa concluída com sucesso!</span>
 				</div>
 			</div>
@@ -72,7 +80,7 @@ var (
 )
 
 // renderTaskCard renders a task card HTML fragment with proper escaping
-func renderTaskCard(task *application.Task) (string, error) {
+func renderTaskCard(task *application.Task, currentUserID string) (string, error) {
 	data := TaskTemplateData{
 		ID:           task.ID,
 		Title:        task.Title,
@@ -95,6 +103,15 @@ func renderTaskCard(task *application.Task) (string, error) {
 		data.StatusText = string(task.Status)
 	}
 
+	// Set ownership badge styling based on owner
+	if task.OwnerID == currentUserID {
+		data.OwnershipClass = "bg-blue-100 text-blue-800"
+		data.OwnershipText = "Própria"
+	} else {
+		data.OwnershipClass = "bg-purple-100 text-purple-800"
+		data.OwnershipText = "Compartilhada"
+	}
+
 	var buf bytes.Buffer
 	if err := taskCardTemplate.Execute(&buf, data); err != nil {
 		return "", err
@@ -104,9 +121,18 @@ func renderTaskCard(task *application.Task) (string, error) {
 }
 
 // renderCompletedTask renders a completed task HTML fragment
-func renderCompletedTask(taskID string) (string, error) {
+func renderCompletedTask(task *application.Task, currentUserID string) (string, error) {
 	data := TaskTemplateData{
-		ID: taskID,
+		ID: task.ID,
+	}
+
+	// Set ownership badge styling based on owner
+	if task.OwnerID == currentUserID {
+		data.OwnershipClass = "bg-blue-100 text-blue-800"
+		data.OwnershipText = "Própria"
+	} else {
+		data.OwnershipClass = "bg-purple-100 text-purple-800"
+		data.OwnershipText = "Compartilhada"
 	}
 
 	var buf bytes.Buffer

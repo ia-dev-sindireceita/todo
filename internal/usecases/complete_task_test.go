@@ -150,12 +150,15 @@ func TestCompleteTaskUseCase_Execute(t *testing.T) {
 			}
 
 			useCase := NewCompleteTaskUseCase(mockRepo, mockService)
-			err := useCase.Execute(context.Background(), tt.taskID, tt.userID)
+			task, err := useCase.Execute(context.Background(), tt.taskID, tt.userID)
 
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Execute() expected error but got nil")
 					return
+				}
+				if task != nil {
+					t.Errorf("Execute() expected nil task on error, got %v", task)
 				}
 				if tt.errorMsg != "" && err.Error() != tt.errorMsg {
 					t.Errorf("Execute() error = %v, want %v", err.Error(), tt.errorMsg)
@@ -168,8 +171,12 @@ func TestCompleteTaskUseCase_Execute(t *testing.T) {
 				return
 			}
 
+			if task == nil {
+				t.Error("Execute() expected task to be returned, got nil")
+				return
+			}
+
 			// Verify task status was updated
-			task, _ := mockRepo.FindByID(context.Background(), tt.taskID)
 			if task.Status != tt.wantStatus {
 				t.Errorf("Execute() task status = %v, want %v", task.Status, tt.wantStatus)
 			}

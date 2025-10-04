@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ia-edev-sindireceita/todo/internal/domain/application"
 	"github.com/ia-edev-sindireceita/todo/internal/domain/repository"
 )
 
@@ -30,32 +31,32 @@ func NewCompleteTaskUseCase(
 	}
 }
 
-// Execute completes a task
-func (uc *CompleteTaskUseCase) Execute(ctx context.Context, taskID, userID string) error {
+// Execute completes a task and returns the updated task
+func (uc *CompleteTaskUseCase) Execute(ctx context.Context, taskID, userID string) (*application.Task, error) {
 	// Find the task
 	task, err := uc.taskRepo.FindByID(ctx, taskID)
 	if err != nil {
-		return errors.New("task not found")
+		return nil, errors.New("task not found")
 	}
 
 	// Check if user can modify the task (must be owner)
 	canModify, err := uc.taskService.CanUserModifyTask(ctx, taskID, userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !canModify {
-		return errors.New("user does not have permission to modify this task")
+		return nil, errors.New("user does not have permission to modify this task")
 	}
 
 	// Complete the task
 	if err := task.CompleteTask(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Update in repository
 	if err := uc.taskRepo.Update(ctx, task); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return task, nil
 }
