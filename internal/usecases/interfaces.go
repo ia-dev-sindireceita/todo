@@ -55,3 +55,8 @@ type CompleteTaskUseCaseInterface interface {
 type ShareTaskUseCaseInterface interface {
 	Execute(ctx context.Context, taskID, ownerID, shareWithUserID string) error
 }
+
+// ExportTasksPDFUseCaseInterface defines the interface for exporting tasks to PDF
+type ExportTasksPDFUseCaseInterface interface {
+	Execute(ctx context.Context, ownerID string) ([]byte, error)
+}
