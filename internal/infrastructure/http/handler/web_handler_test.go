@@ -208,10 +208,23 @@ func TestWebCreateTask_HTMLEscaping(t *testing.T) {
 
 	body := w.Body.String()
 
-	// Verify that script tags are present (not escaped in current implementation)
-	// This is actually a potential XSS vulnerability that should be fixed
+	// Verify that HTML is properly escaped
 	if strings.Contains(body, "<script>") {
-		t.Logf("WARNING: HTML content is not escaped, potential XSS vulnerability")
+		t.Error("HTML content is not escaped - XSS vulnerability detected")
+	}
+
+	// Verify escaped content is present
+	if !strings.Contains(body, "&lt;script&gt;") {
+		t.Error("Expected script tags to be HTML escaped as &lt;script&gt;")
+	}
+
+	if !strings.Contains(body, "&lt;img") {
+		t.Error("Expected img tag to be HTML escaped")
+	}
+
+	// Verify the content is still displayed (but safely)
+	if !strings.Contains(body, "alert") {
+		t.Error("Expected escaped content to still contain 'alert' text")
 	}
 }
 
