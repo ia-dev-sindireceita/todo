@@ -62,6 +62,18 @@
                             Concluir
                         </button>
                         {{ end }}
+                        {{ if eq .OwnerID $.UserID }}
+                        {{ if ne .Status "completed" }}
+                        <button hx-post="/web/tasks/{{ .ID }}/share"
+                                hx-target="#task-{{ .ID }}"
+                                hx-swap="outerHTML"
+                                hx-prompt="Digite o email do usuário com quem deseja compartilhar:"
+                                hx-vals='js:{share_with_user_id: prompt("Digite o email do usuário:")}'
+                                class="text-blue-600 hover:text-blue-800 font-medium">
+                            Compartilhar
+                        </button>
+                        {{ end }}
+                        {{ end }}
                         <button hx-delete="/web/tasks/{{ .ID }}" hx-target="#task-{{ .ID }}" hx-swap="outerHTML"
                                 hx-confirm="Tem certeza que deseja excluir esta tarefa?"
                                 class="text-red-600 hover:text-red-800">

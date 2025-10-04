@@ -50,3 +50,8 @@ type ListSharedTasksUseCaseInterface interface {
 type CompleteTaskUseCaseInterface interface {
 	Execute(ctx context.Context, taskID, userID string) (*application.Task, error)
 }
+
+// ShareTaskUseCaseInterface defines the interface for sharing tasks
+type ShareTaskUseCaseInterface interface {
+	Execute(ctx context.Context, taskID, ownerID, shareWithUserID string) error
+}
