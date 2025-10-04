@@ -46,9 +46,10 @@ func (h *WebTaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	title := r.FormValue("title")
 	description := r.FormValue("description")
+	imagePath := r.FormValue("image_path") // Will be populated later with upload functionality
 
 	// Create task
-	task, err := h.createTask.Execute(r.Context(), title, description, userID)
+	task, err := h.createTask.Execute(r.Context(), title, description, userID, imagePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

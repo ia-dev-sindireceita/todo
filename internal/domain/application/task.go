@@ -21,12 +21,13 @@ type Task struct {
 	Description string
 	Status      TaskStatus
 	OwnerID     string
+	ImagePath   string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
 // NewTask creates a new Task with validation
-func NewTask(id, title, description string, status TaskStatus, ownerID string) (*Task, error) {
+func NewTask(id, title, description string, status TaskStatus, ownerID, imagePath string) (*Task, error) {
 	if id == "" {
 		return nil, errors.New("task id cannot be empty")
 	}
@@ -47,6 +48,10 @@ func NewTask(id, title, description string, status TaskStatus, ownerID string) (
 		return nil, errors.New("task owner id cannot be empty")
 	}
 
+	if len(imagePath) > 500 {
+		return nil, errors.New("image path cannot exceed 500 characters")
+	}
+
 	if !isValidStatus(status) {
 		return nil, errors.New("invalid task status")
 	}
@@ -58,13 +63,14 @@ func NewTask(id, title, description string, status TaskStatus, ownerID string) (
 		Description: description,
 		Status:      status,
 		OwnerID:     ownerID,
+		ImagePath:   imagePath,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}, nil
 }
 
 // Update updates task fields with validation
-func (t *Task) Update(title, description string, status TaskStatus) error {
+func (t *Task) Update(title, description string, status TaskStatus, imagePath string) error {
 	if title == "" {
 		return errors.New("task title cannot be empty")
 	}
@@ -77,6 +83,10 @@ func (t *Task) Update(title, description string, status TaskStatus) error {
 		return errors.New("task description cannot exceed 1000 characters")
 	}
 
+	if len(imagePath) > 500 {
+		return errors.New("image path cannot exceed 500 characters")
+	}
+
 	if !isValidStatus(status) {
 		return errors.New("invalid task status")
 	}
@@ -84,6 +94,7 @@ func (t *Task) Update(title, description string, status TaskStatus) error {
 	t.Title = title
 	t.Description = description
 	t.Status = status
+	t.ImagePath = imagePath
 	t.UpdatedAt = time.Now()
 
 	return nil

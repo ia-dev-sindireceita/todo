@@ -40,12 +40,14 @@ func NewTaskHandler(
 type CreateTaskRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	ImagePath   string `json:"image_path"`
 }
 
 type UpdateTaskRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Status      string `json:"status"`
+	ImagePath   string `json:"image_path"`
 }
 
 // CreateTask handles POST /api/tasks
@@ -59,7 +61,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := h.createTask.Execute(r.Context(), req.Title, req.Description, userID)
+	task, err := h.createTask.Execute(r.Context(), req.Title, req.Description, userID, req.ImagePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -125,7 +127,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := application.TaskStatus(req.Status)
-	err := h.updateTask.Execute(r.Context(), taskID, req.Title, req.Description, status, userID)
+	err := h.updateTask.Execute(r.Context(), taskID, req.Title, req.Description, status, req.ImagePath, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

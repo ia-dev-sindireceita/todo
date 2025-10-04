@@ -20,8 +20,8 @@ func NewSQLiteTaskRepository(db *sql.DB) *SQLiteTaskRepository {
 
 // Create creates a new task using prepared statement
 func (r *SQLiteTaskRepository) Create(ctx context.Context, task *application.Task) error {
-	query := `INSERT INTO tasks (id, title, description, status, owner_id, created_at, updated_at)
-	          VALUES (?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO tasks (id, title, description, status, owner_id, image_path, created_at, updated_at)
+	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.db.ExecContext(ctx, query,
 		task.ID,
@@ -29,6 +29,7 @@ func (r *SQLiteTaskRepository) Create(ctx context.Context, task *application.Tas
 		task.Description,
 		string(task.Status),
 		task.OwnerID,
+		task.ImagePath,
 		task.CreatedAt,
 		task.UpdatedAt,
 	)
@@ -37,13 +38,14 @@ func (r *SQLiteTaskRepository) Create(ctx context.Context, task *application.Tas
 
 // Update updates an existing task using prepared statement
 func (r *SQLiteTaskRepository) Update(ctx context.Context, task *application.Task) error {
-	query := `UPDATE tasks SET title = ?, description = ?, status = ?, updated_at = ?
+	query := `UPDATE tasks SET title = ?, description = ?, status = ?, image_path = ?, updated_at = ?
 	          WHERE id = ?`
 
 	_, err := r.db.ExecContext(ctx, query,
 		task.Title,
 		task.Description,
 		string(task.Status),
+		task.ImagePath,
 		task.UpdatedAt,
 		task.ID,
 	)
@@ -59,12 +61,13 @@ func (r *SQLiteTaskRepository) Delete(ctx context.Context, id string) error {
 
 // FindByID finds a task by ID using prepared statement
 func (r *SQLiteTaskRepository) FindByID(ctx context.Context, id string) (*application.Task, error) {
-	query := `SELECT id, title, description, status, owner_id, created_at, updated_at
+	query := `SELECT id, title, description, status, owner_id, image_path, created_at, updated_at
 	          FROM tasks WHERE id = ?`
 
 	var task application.Task
 	var status string
 	var createdAt, updatedAt string
+	var imagePath sql.NullString
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&task.ID,
@@ -72,6 +75,7 @@ func (r *SQLiteTaskRepository) FindByID(ctx context.Context, id string) (*applic
 		&task.Description,
 		&status,
 		&task.OwnerID,
+		&imagePath,
 		&createdAt,
 		&updatedAt,
 	)
@@ -83,6 +87,9 @@ func (r *SQLiteTaskRepository) FindByID(ctx context.Context, id string) (*applic
 	}
 
 	task.Status = application.TaskStatus(status)
+	if imagePath.Valid {
+		task.ImagePath = imagePath.String
+	}
 	task.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 	task.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
 
@@ -91,7 +98,7 @@ func (r *SQLiteTaskRepository) FindByID(ctx context.Context, id string) (*applic
 
 // FindByOwnerID finds all tasks owned by a user using prepared statement
 func (r *SQLiteTaskRepository) FindByOwnerID(ctx context.Context, ownerID string) ([]*application.Task, error) {
-	query := `SELECT id, title, description, status, owner_id, created_at, updated_at
+	query := `SELECT id, title, description, status, owner_id, image_path, created_at, updated_at
 	          FROM tasks WHERE owner_id = ? ORDER BY created_at DESC`
 
 	rows, err := r.db.QueryContext(ctx, query, ownerID)
@@ -105,6 +112,7 @@ func (r *SQLiteTaskRepository) FindByOwnerID(ctx context.Context, ownerID string
 		var task application.Task
 		var status string
 		var createdAt, updatedAt string
+		var imagePath sql.NullString
 
 		err := rows.Scan(
 			&task.ID,
@@ -112,6 +120,7 @@ func (r *SQLiteTaskRepository) FindByOwnerID(ctx context.Context, ownerID string
 			&task.Description,
 			&status,
 			&task.OwnerID,
+			&imagePath,
 			&createdAt,
 			&updatedAt,
 		)
@@ -120,6 +129,9 @@ func (r *SQLiteTaskRepository) FindByOwnerID(ctx context.Context, ownerID string
 		}
 
 		task.Status = application.TaskStatus(status)
+		if imagePath.Valid {
+			task.ImagePath = imagePath.String
+		}
 		task.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 		task.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
 
@@ -131,7 +143,7 @@ func (r *SQLiteTaskRepository) FindByOwnerID(ctx context.Context, ownerID string
 
 // FindSharedWithUser finds all tasks shared with a user using prepared statement
 func (r *SQLiteTaskRepository) FindSharedWithUser(ctx context.Context, userID string) ([]*application.Task, error) {
-	query := `SELECT t.id, t.title, t.description, t.status, t.owner_id, t.created_at, t.updated_at
+	query := `SELECT t.id, t.title, t.description, t.status, t.owner_id, t.image_path, t.created_at, t.updated_at
 	          FROM tasks t
 	          INNER JOIN task_shares ts ON t.id = ts.task_id
 	          WHERE ts.user_id = ?
@@ -148,6 +160,7 @@ func (r *SQLiteTaskRepository) FindSharedWithUser(ctx context.Context, userID st
 		var task application.Task
 		var status string
 		var createdAt, updatedAt string
+		var imagePath sql.NullString
 
 		err := rows.Scan(
 			&task.ID,
@@ -155,6 +168,7 @@ func (r *SQLiteTaskRepository) FindSharedWithUser(ctx context.Context, userID st
 			&task.Description,
 			&status,
 			&task.OwnerID,
+			&imagePath,
 			&createdAt,
 			&updatedAt,
 		)
@@ -163,6 +177,9 @@ func (r *SQLiteTaskRepository) FindSharedWithUser(ctx context.Context, userID st
 		}
 
 		task.Status = application.TaskStatus(status)
+		if imagePath.Valid {
+			task.ImagePath = imagePath.String
+		}
 		task.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 		task.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
 

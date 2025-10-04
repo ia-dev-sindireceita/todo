@@ -20,7 +20,7 @@ import (
 
 func TestWebCreateTask_Success(t *testing.T) {
 	mockCreate := &mockCreateTaskUseCase{
-		executeFunc: func(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+		executeFunc: func(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 			if title != "New Web Task" {
 				t.Errorf("Expected title 'New Web Task', got %s", title)
 			}
@@ -112,7 +112,7 @@ func TestWebCreateTask_Success(t *testing.T) {
 
 func TestWebCreateTask_SharedTaskIndicator(t *testing.T) {
 	mockCreate := &mockCreateTaskUseCase{
-		executeFunc: func(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+		executeFunc: func(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 			// Simula que outro usuário criou a tarefa
 			return &application.Task{
 				ID:          "shared-task-789",
@@ -199,7 +199,7 @@ func TestWebCreateTask_InvalidForm(t *testing.T) {
 
 func TestWebCreateTask_ValidationError(t *testing.T) {
 	mockCreate := &mockCreateTaskUseCase{
-		executeFunc: func(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+		executeFunc: func(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 			return nil, errors.New("task title cannot be empty")
 		},
 	}
@@ -230,7 +230,7 @@ func TestWebCreateTask_ValidationError(t *testing.T) {
 
 func TestWebCreateTask_HTMLEscaping(t *testing.T) {
 	mockCreate := &mockCreateTaskUseCase{
-		executeFunc: func(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+		executeFunc: func(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 			return &application.Task{
 				ID:          "task-xss",
 				Title:       title,
@@ -611,7 +611,7 @@ func TestWebShareTask_ShareButtonAppearsOnlyForOwnTasks(t *testing.T) {
 	taskID := "task-1"
 	ownerID := "user-1"
 
-	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID, "")
 
 	// Render for owner - should show share button
 	html, err := renderTaskCard(task, ownerID)
@@ -674,7 +674,7 @@ func TestTaskCard_ContainsIconsInButtons(t *testing.T) {
 	taskID := "task-with-icons"
 	ownerID := "user-1"
 
-	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID, "")
 
 	html, err := renderTaskCard(task, ownerID)
 	if err != nil {
@@ -706,7 +706,7 @@ func TestTaskCard_CompletedTaskHasNoCompleteButton(t *testing.T) {
 	taskID := "completed-task"
 	ownerID := "user-1"
 
-	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusCompleted, ownerID)
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusCompleted, ownerID, "")
 
 	html, err := renderTaskCard(task, ownerID)
 	if err != nil {
@@ -734,7 +734,7 @@ func TestTaskCard_SharedTaskHasNoShareButton(t *testing.T) {
 	ownerID := "user-1"
 	viewerID := "user-2"
 
-	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID, "")
 
 	html, err := renderTaskCard(task, viewerID)
 	if err != nil {
