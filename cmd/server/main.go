@@ -46,6 +46,7 @@ func main() {
 	listTasks := usecases.NewListTasksUseCase(taskRepo)
 	listSharedTasks := usecases.NewListSharedTasksUseCase(taskRepo)
 	shareTask := usecases.NewShareTaskUseCase(taskRepo, shareRepo, taskService)
+	exportTasksPDF := usecases.NewExportTasksPDFUseCase(taskRepo)
 	_ = usecases.NewUnshareTaskUseCase(shareRepo, taskService)            // unshareTask for future use
 
 	// Auth use cases
@@ -68,6 +69,9 @@ func main() {
 	// Auth handlers
 	authHandler := handler.NewAuthHandler(loginUseCase, registerUseCase)
 
+	// PDF handler
+	pdfHandler := handler.NewPDFHandler(exportTasksPDF)
+
 	// Setup router
 	mux := http.NewServeMux()
 
@@ -79,6 +83,7 @@ func main() {
 	apiMux.HandleFunc("GET /tasks/{id}", taskHandler.GetTask)
 	apiMux.HandleFunc("PUT /tasks/{id}", taskHandler.UpdateTask)
 	apiMux.HandleFunc("DELETE /tasks/{id}", taskHandler.DeleteTask)
+	apiMux.HandleFunc("GET /tasks/export/pdf", pdfHandler.ExportTasks)
 
 	// Apply auth middleware to API routes
 	mux.Handle("/api/", http.StripPrefix("/api", middleware.Chain(
