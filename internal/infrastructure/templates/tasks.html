@@ -47,6 +47,11 @@
                                 {{ else if eq .Status "in_progress" }}Em Progresso
                                 {{ else }}Concluída{{ end }}
                             </span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {{ if eq .OwnerID $.UserID }}bg-blue-100 text-blue-800
+                                {{ else }}bg-purple-100 text-purple-800{{ end }}">
+                                {{ if eq .OwnerID $.UserID }}Própria{{ else }}Compartilhada{{ end }}
+                            </span>
                             <span class="text-sm text-gray-500">{{ .CreatedAt.Format "02/01/2006 15:04" }}</span>
                         </div>
                     </div>
