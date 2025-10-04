@@ -10,14 +10,14 @@ import (
 
 // AuthHandler handles authentication requests
 type AuthHandler struct {
-	loginUseCase    *usecases.LoginUseCase
-	registerUseCase *usecases.RegisterUseCase
+	loginUseCase    usecases.LoginUseCaseInterface
+	registerUseCase usecases.RegisterUseCaseInterface
 }
 
 // NewAuthHandler creates a new AuthHandler
 func NewAuthHandler(
-	loginUseCase *usecases.LoginUseCase,
-	registerUseCase *usecases.RegisterUseCase,
+	loginUseCase usecases.LoginUseCaseInterface,
+	registerUseCase usecases.RegisterUseCaseInterface,
 ) *AuthHandler {
 	return &AuthHandler{
 		loginUseCase:    loginUseCase,
