@@ -200,8 +200,9 @@ func handleTasksPage(listTasks *usecases.ListTasksUseCase) http.HandlerFunc {
 		))
 
 		data := map[string]interface{}{
-			"Title": "Tarefas",
-			"Tasks": tasks,
+			"Title":  "Tarefas",
+			"Tasks":  tasks,
+			"UserID": userID,
 		}
 
 		if err := tmpl.Execute(w, data); err != nil {
