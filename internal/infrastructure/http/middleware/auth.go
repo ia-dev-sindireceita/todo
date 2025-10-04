@@ -4,24 +4,56 @@ import (
 	"context"
 	"net/http"
 	"strings"
+
+	"github.com/ia-edev-sindireceita/todo/internal/domain/service"
 )
 
-// AuthMiddleware provides simple authentication
-// For production, use JWT or sessions with proper security
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Simple header-based auth for demonstration
-		// In production, use JWT, sessions, or OAuth
-		userID := r.Header.Get("X-User-ID")
-		if userID == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
+// AuthMiddleware provides JWT-based authentication
+func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
+	authService := service.NewAuthService(jwtSecret)
 
-		// Add userID to context
-		ctx := context.WithValue(r.Context(), "userID", userID)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Extract token from Authorization header or cookie
+			token := extractToken(r)
+			if token == "" {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			// Validate token
+			claims, err := authService.ValidateToken(token)
+			if err != nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			// Add userID and email to context
+			ctx := context.WithValue(r.Context(), "userID", claims.UserID)
+			ctx = context.WithValue(ctx, "email", claims.Email)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// extractToken extracts JWT token from Authorization header or cookie
+func extractToken(r *http.Request) string {
+	// Try Authorization header first (Bearer token)
+	authHeader := r.Header.Get("Authorization")
+	if authHeader != "" {
+		parts := strings.Split(authHeader, " ")
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			return parts[1]
+		}
+	}
+
+	// Try cookie as fallback
+	cookie, err := r.Cookie("auth_token")
+	if err == nil && cookie.Value != "" {
+		return cookie.Value
+	}
+
+	return ""
 }
 
 // CORS middleware for development

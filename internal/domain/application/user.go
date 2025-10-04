@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+var (
+	ErrUserNotFound = errors.New("user not found")
+)
+
 // User represents a user entity
 type User struct {
 	ID           string
