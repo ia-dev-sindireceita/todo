@@ -98,6 +98,57 @@ func TestWebCreateTask_Success(t *testing.T) {
 	if !strings.Contains(body, "bg-yellow-100") {
 		t.Error("Expected HTML fragment to contain yellow status badge")
 	}
+
+	// Verify ownership badge for own task
+	if !strings.Contains(body, "Própria") {
+		t.Error("Expected HTML fragment to contain 'Própria' ownership badge")
+	}
+
+	if !strings.Contains(body, "bg-blue-100") {
+		t.Error("Expected HTML fragment to contain blue ownership badge for own task")
+	}
+}
+
+func TestWebCreateTask_SharedTaskIndicator(t *testing.T) {
+	mockCreate := &mockCreateTaskUseCase{
+		executeFunc: func(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+			// Simula que outro usuário criou a tarefa
+			return &application.Task{
+				ID:          "shared-task-789",
+				Title:       "Shared Task",
+				Description: "Task shared with me",
+				Status:      application.StatusPending,
+				OwnerID:     "other-user-456", // Diferente do usuário atual
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			}, nil
+		},
+	}
+
+	handler := NewWebTaskHandler(mockCreate, nil, nil)
+
+	formData := url.Values{}
+	formData.Set("title", "Shared Task")
+	formData.Set("description", "Task shared with me")
+
+	req := httptest.NewRequest("POST", "/web/tasks", strings.NewReader(formData.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	ctx := context.WithValue(req.Context(), "userID", "user-123")
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.CreateTask(w, req)
+
+	body := w.Body.String()
+
+	// Verify shared task badge
+	if !strings.Contains(body, "Compartilhada") {
+		t.Error("Expected HTML fragment to contain 'Compartilhada' ownership badge")
+	}
+
+	if !strings.Contains(body, "bg-purple-100") {
+		t.Error("Expected HTML fragment to contain purple ownership badge for shared task")
+	}
 }
 
 func TestWebCreateTask_Unauthorized(t *testing.T) {
@@ -336,14 +387,21 @@ func TestWebDeleteTask_NoPermission(t *testing.T) {
 
 func TestWebCompleteTask_Success(t *testing.T) {
 	mockComplete := &mockCompleteTaskUseCase{
-		executeFunc: func(ctx context.Context, taskID, userID string) error {
+		executeFunc: func(ctx context.Context, taskID, userID string) (*application.Task, error) {
 			if taskID != "task-to-complete" {
 				t.Errorf("Expected taskID 'task-to-complete', got %s", taskID)
 			}
 			if userID != "user-123" {
 				t.Errorf("Expected userID 'user-123', got %s", userID)
 			}
-			return nil
+			return &application.Task{
+				ID:        "task-to-complete",
+				Title:     "Test Task",
+				OwnerID:   "user-123",
+				Status:    application.StatusCompleted,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}, nil
 		},
 	}
 
@@ -398,6 +456,51 @@ func TestWebCompleteTask_Success(t *testing.T) {
 	if !strings.Contains(body, "bg-white") {
 		t.Error("Expected HTML fragment to contain Tailwind CSS classes")
 	}
+
+	// Verify ownership badge for completed own task
+	if !strings.Contains(body, "Própria") {
+		t.Error("Expected HTML fragment to contain 'Própria' ownership badge")
+	}
+
+	if !strings.Contains(body, "bg-blue-100") {
+		t.Error("Expected HTML fragment to contain blue ownership badge for own task")
+	}
+}
+
+func TestWebCompleteTask_SharedTaskIndicator(t *testing.T) {
+	mockComplete := &mockCompleteTaskUseCase{
+		executeFunc: func(ctx context.Context, taskID, userID string) (*application.Task, error) {
+			return &application.Task{
+				ID:        "shared-task-999",
+				Title:     "Shared Task",
+				OwnerID:   "other-user-456", // Different from current user
+				Status:    application.StatusCompleted,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}, nil
+		},
+	}
+
+	handler := NewWebTaskHandler(nil, nil, mockComplete)
+
+	req := httptest.NewRequest("POST", "/web/tasks/shared-task-999/complete", nil)
+	req.SetPathValue("id", "shared-task-999")
+	ctx := context.WithValue(req.Context(), "userID", "user-123")
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	handler.CompleteTask(w, req)
+
+	body := w.Body.String()
+
+	// Verify shared ownership badge in completed task
+	if !strings.Contains(body, "Compartilhada") {
+		t.Error("Expected completed shared task to contain 'Compartilhada' ownership badge")
+	}
+
+	if !strings.Contains(body, "bg-purple-100") {
+		t.Error("Expected completed shared task to contain purple ownership badge")
+	}
 }
 
 func TestWebCompleteTask_Unauthorized(t *testing.T) {
@@ -417,8 +520,8 @@ func TestWebCompleteTask_Unauthorized(t *testing.T) {
 
 func TestWebCompleteTask_NotFound(t *testing.T) {
 	mockComplete := &mockCompleteTaskUseCase{
-		executeFunc: func(ctx context.Context, taskID, userID string) error {
-			return errors.New("task not found")
+		executeFunc: func(ctx context.Context, taskID, userID string) (*application.Task, error) {
+			return nil, errors.New("task not found")
 		},
 	}
 
@@ -439,8 +542,8 @@ func TestWebCompleteTask_NotFound(t *testing.T) {
 
 func TestWebCompleteTask_NoPermission(t *testing.T) {
 	mockComplete := &mockCompleteTaskUseCase{
-		executeFunc: func(ctx context.Context, taskID, userID string) error {
-			return errors.New("user does not have permission to modify this task")
+		executeFunc: func(ctx context.Context, taskID, userID string) (*application.Task, error) {
+			return nil, errors.New("user does not have permission to modify this task")
 		},
 	}
 
@@ -461,8 +564,8 @@ func TestWebCompleteTask_NoPermission(t *testing.T) {
 
 func TestWebCompleteTask_AlreadyCompleted(t *testing.T) {
 	mockComplete := &mockCompleteTaskUseCase{
-		executeFunc: func(ctx context.Context, taskID, userID string) error {
-			return errors.New("task is already completed")
+		executeFunc: func(ctx context.Context, taskID, userID string) (*application.Task, error) {
+			return nil, errors.New("task is already completed")
 		},
 	}
 
@@ -488,12 +591,12 @@ func TestWebCompleteTask_AlreadyCompleted(t *testing.T) {
 
 // Mock for CompleteTaskUseCase (needed for web handler tests)
 type mockCompleteTaskUseCase struct {
-	executeFunc func(ctx context.Context, taskID, userID string) error
+	executeFunc func(ctx context.Context, taskID, userID string) (*application.Task, error)
 }
 
-func (m *mockCompleteTaskUseCase) Execute(ctx context.Context, taskID, userID string) error {
+func (m *mockCompleteTaskUseCase) Execute(ctx context.Context, taskID, userID string) (*application.Task, error) {
 	if m.executeFunc != nil {
 		return m.executeFunc(ctx, taskID, userID)
 	}
-	return nil
+	return nil, nil
 }
