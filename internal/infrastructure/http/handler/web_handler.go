@@ -8,16 +8,16 @@ import (
 
 // WebTaskHandler handles web requests (form data -> JSON)
 type WebTaskHandler struct {
-	createTask   *usecases.CreateTaskUseCase
-	deleteTask   *usecases.DeleteTaskUseCase
-	completeTask *usecases.CompleteTaskUseCase
+	createTask   usecases.CreateTaskUseCaseInterface
+	deleteTask   usecases.DeleteTaskUseCaseInterface
+	completeTask usecases.CompleteTaskUseCaseInterface
 }
 
 // NewWebTaskHandler creates a new WebTaskHandler
 func NewWebTaskHandler(
-	createTask *usecases.CreateTaskUseCase,
-	deleteTask *usecases.DeleteTaskUseCase,
-	completeTask *usecases.CompleteTaskUseCase,
+	createTask usecases.CreateTaskUseCaseInterface,
+	deleteTask usecases.DeleteTaskUseCaseInterface,
+	completeTask usecases.CompleteTaskUseCaseInterface,
 ) *WebTaskHandler {
 	return &WebTaskHandler{
 		createTask:   createTask,
@@ -53,31 +53,11 @@ func (h *WebTaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	// Return HTML fragment for HTMX
 	w.Header().Set("Content-Type", "text/html")
-	html := `<div class="bg-white shadow rounded-lg p-6" id="task-` + task.ID + `">
-		<div class="flex justify-between items-start">
-			<div class="flex-1">
-				<h3 class="text-lg font-semibold text-gray-900">` + task.Title + `</h3>
-				<p class="text-gray-600 mt-1">` + task.Description + `</p>
-				<div class="mt-2 flex items-center space-x-2">
-					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-						Pendente
-					</span>
-					<span class="text-sm text-gray-500">` + task.CreatedAt.Format("02/01/2006 15:04") + `</span>
-				</div>
-			</div>
-			<div class="flex space-x-2 ml-4">
-				<button hx-post="/web/tasks/` + task.ID + `/complete" hx-target="#task-` + task.ID + `" hx-swap="outerHTML"
-						class="text-green-600 hover:text-green-800 font-medium">
-					Concluir
-				</button>
-				<button hx-delete="/web/tasks/` + task.ID + `" hx-target="#task-` + task.ID + `" hx-swap="outerHTML"
-						hx-confirm="Tem certeza que deseja excluir esta tarefa?"
-						class="text-red-600 hover:text-red-800">
-					Excluir
-				</button>
-			</div>
-		</div>
-	</div>`
+	html, err := renderTaskCard(task)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 
 	w.Write([]byte(html))
 }
@@ -122,25 +102,11 @@ func (h *WebTaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 
 	// Return updated HTML fragment for HTMX with completed status
 	w.Header().Set("Content-Type", "text/html")
-	html := `<div class="bg-white shadow rounded-lg p-6" id="task-` + taskID + `">
-		<div class="flex justify-between items-start">
-			<div class="flex-1">
-				<div class="flex items-center space-x-2">
-					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-						Concluída
-					</span>
-					<span class="text-sm text-gray-500">Tarefa concluída com sucesso!</span>
-				</div>
-			</div>
-			<div class="flex space-x-2 ml-4">
-				<button hx-delete="/web/tasks/` + taskID + `" hx-target="#task-` + taskID + `" hx-swap="outerHTML"
-						hx-confirm="Tem certeza que deseja excluir esta tarefa?"
-						class="text-red-600 hover:text-red-800">
-					Excluir
-				</button>
-			</div>
-		</div>
-	</div>`
+	html, err := renderCompletedTask(taskID)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 
 	w.Write([]byte(html))
 }
