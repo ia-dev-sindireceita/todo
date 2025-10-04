@@ -37,3 +37,4 @@ go.work
 # OS
 .DS_Store
 Thumbs.db
+go1.24.5.linux-amd64.tar.gz
