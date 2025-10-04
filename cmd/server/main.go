@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/ia-edev-sindireceita/todo/internal/domain/service"
 	"github.com/ia-edev-sindireceita/todo/internal/infrastructure/database"
@@ -13,8 +14,13 @@ import (
 )
 
 func main() {
-	// JWT secret - in production, load from environment variable
-	jwtSecret := "your-secret-key-change-in-production"
+	// JWT secret - MUST be set via environment variable in production
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		// Use default only for development - NEVER in production
+		jwtSecret = "development-secret-key-change-in-production"
+		log.Println("WARNING: Using default JWT secret. Set JWT_SECRET environment variable in production!")
+	}
 
 	// Initialize database
 	db, err := database.NewSQLiteDB("todo.db")

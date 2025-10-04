@@ -114,15 +114,7 @@ func (h *AuthHandler) WebLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set JWT token in HttpOnly cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   86400, // 24 hours
-	})
+	http.SetCookie(w, createAuthCookie(token))
 
 	// Redirect to tasks page
 	w.Header().Set("HX-Redirect", "/tasks")
@@ -150,8 +142,7 @@ func (h *AuthHandler) WebRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Auto-login after registration
-	// Generate token for the new user
+	// Auto-login after registration using the same password
 	token, err := h.loginUseCase.Execute(r.Context(), user.Email, password)
 	if err != nil {
 		// Redirect to login page if auto-login fails
@@ -161,15 +152,7 @@ func (h *AuthHandler) WebRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set JWT token in HttpOnly cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   86400, // 24 hours
-	})
+	http.SetCookie(w, createAuthCookie(token))
 
 	// Redirect to tasks page
 	w.Header().Set("HX-Redirect", "/tasks")
@@ -179,15 +162,7 @@ func (h *AuthHandler) WebRegister(w http.ResponseWriter, r *http.Request) {
 // Logout handles user logout
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// Clear the auth cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   -1, // Delete cookie
-	})
+	http.SetCookie(w, deleteAuthCookie())
 
 	// Redirect to login page
 	w.Header().Set("HX-Redirect", "/login")
