@@ -16,23 +16,28 @@ This is a Go project: `github.com/ia-edev-sindireceita/todo`
 
 **MANDATORY**: All development must follow this workflow:
 
-1. **Create a feature branch** for each task/issue:
+1. **Create an issue first** - NEVER make code changes without a corresponding GitHub issue
+   - Document what needs to be done
+   - Explain the problem or feature request
+   - Reference the issue number in all related work
+
+2. **Create a feature branch** for each task/issue:
    ```bash
    git checkout -b feature/descriptive-name
    # or
    git checkout -b fix/bug-description
    ```
 
-2. **Work on the branch** following TDD principles
+3. **Work on the branch** following TDD principles
 
-3. **Commit changes** with clear, descriptive messages
+4. **Commit changes** with clear, descriptive messages
 
-4. **Create a Pull Request** to `main` when done:
+5. **Create a Pull Request** to `main` when done:
    ```bash
    gh pr create --base main --head feature/descriptive-name
    ```
 
-5. **Never commit directly to `main`**
+6. **Never commit directly to `main`**
 
 Branch naming conventions:
 - `feature/` - New features

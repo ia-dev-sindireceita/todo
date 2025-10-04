@@ -45,7 +45,7 @@ func main() {
 	getTask := usecases.NewGetTaskUseCase(taskRepo, taskService)
 	listTasks := usecases.NewListTasksUseCase(taskRepo)
 	listSharedTasks := usecases.NewListSharedTasksUseCase(taskRepo)
-	_ = usecases.NewShareTaskUseCase(taskRepo, shareRepo, taskService)     // shareTask for future use
+	shareTask := usecases.NewShareTaskUseCase(taskRepo, shareRepo, taskService)
 	_ = usecases.NewUnshareTaskUseCase(shareRepo, taskService)            // unshareTask for future use
 
 	// Auth use cases
@@ -63,7 +63,7 @@ func main() {
 	)
 
 	// Web handlers (for HTMX forms)
-	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask, completeTask)
+	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask, completeTask, shareTask)
 
 	// Auth handlers
 	authHandler := handler.NewAuthHandler(loginUseCase, registerUseCase)
@@ -117,6 +117,7 @@ func main() {
 	protectedWebAPIMux := http.NewServeMux()
 	protectedWebAPIMux.HandleFunc("POST /web/tasks", webTaskHandler.CreateTask)
 	protectedWebAPIMux.HandleFunc("POST /web/tasks/{id}/complete", webTaskHandler.CompleteTask)
+	protectedWebAPIMux.HandleFunc("POST /web/tasks/{id}/share", webTaskHandler.ShareTask)
 	protectedWebAPIMux.HandleFunc("DELETE /web/tasks/{id}", webTaskHandler.DeleteTask)
 
 	mux.Handle("/web/tasks", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))

@@ -17,6 +17,7 @@ type TaskTemplateData struct {
 	StatusText     string
 	CreatedAt      string
 	ShowComplete   bool
+	ShowShare      bool
 	OwnershipClass string
 	OwnershipText  string
 }
@@ -43,6 +44,16 @@ var (
 				<button hx-post="/web/tasks/{{.ID}}/complete" hx-target="#task-{{.ID}}" hx-swap="outerHTML"
 						class="text-green-600 hover:text-green-800 font-medium">
 					Concluir
+				</button>
+				{{end}}
+				{{if .ShowShare}}
+				<button hx-post="/web/tasks/{{.ID}}/share"
+						hx-target="#task-{{.ID}}"
+						hx-swap="outerHTML"
+						hx-prompt="Digite o email do usuário com quem deseja compartilhar:"
+						hx-vals='js:{share_with_user_id: prompt("Digite o email do usuário:")}'
+						class="text-blue-600 hover:text-blue-800 font-medium">
+					Compartilhar
 				</button>
 				{{end}}
 				<button hx-delete="/web/tasks/{{.ID}}" hx-target="#task-{{.ID}}" hx-swap="outerHTML"
@@ -81,6 +92,8 @@ var (
 
 // renderTaskCard renders a task card HTML fragment with proper escaping
 func renderTaskCard(task *application.Task, currentUserID string) (string, error) {
+	isOwner := task.OwnerID == currentUserID
+
 	data := TaskTemplateData{
 		ID:           task.ID,
 		Title:        task.Title,
@@ -88,6 +101,7 @@ func renderTaskCard(task *application.Task, currentUserID string) (string, error
 		Status:       string(task.Status),
 		CreatedAt:    task.CreatedAt.Format("02/01/2006 15:04"),
 		ShowComplete: task.Status == application.StatusPending,
+		ShowShare:    isOwner && task.Status != application.StatusCompleted,
 	}
 
 	// Set status badge styling based on status

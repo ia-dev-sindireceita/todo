@@ -11,6 +11,7 @@ type WebTaskHandler struct {
 	createTask   usecases.CreateTaskUseCaseInterface
 	deleteTask   usecases.DeleteTaskUseCaseInterface
 	completeTask usecases.CompleteTaskUseCaseInterface
+	shareTask    usecases.ShareTaskUseCaseInterface
 }
 
 // NewWebTaskHandler creates a new WebTaskHandler
@@ -18,11 +19,13 @@ func NewWebTaskHandler(
 	createTask usecases.CreateTaskUseCaseInterface,
 	deleteTask usecases.DeleteTaskUseCaseInterface,
 	completeTask usecases.CompleteTaskUseCaseInterface,
+	shareTask usecases.ShareTaskUseCaseInterface,
 ) *WebTaskHandler {
 	return &WebTaskHandler{
 		createTask:   createTask,
 		deleteTask:   deleteTask,
 		completeTask: completeTask,
+		shareTask:    shareTask,
 	}
 }
 
@@ -109,4 +112,44 @@ func (h *WebTaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(html))
+}
+
+// ShareTask handles task sharing via web form
+func (h *WebTaskHandler) ShareTask(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context (set by auth middleware)
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	taskID := r.PathValue("id")
+
+	// Parse form data
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	shareWithUserID := r.FormValue("share_with_user_id")
+	if shareWithUserID == "" {
+		http.Error(w, "share_with_user_id is required", http.StatusBadRequest)
+		return
+	}
+
+	// Execute share use case
+	err := h.shareTask.Execute(r.Context(), taskID, userID, shareWithUserID)
+	if err != nil {
+		if err.Error() == "only the task owner can share the task" {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Return success message as HTML fragment
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">Tarefa compartilhada com sucesso!</div>`))
 }

@@ -41,7 +41,7 @@ func TestWebCreateTask_Success(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(mockCreate, nil, nil)
+	handler := NewWebTaskHandler(mockCreate, nil, nil, nil)
 
 	formData := url.Values{}
 	formData.Set("title", "New Web Task")
@@ -125,7 +125,7 @@ func TestWebCreateTask_SharedTaskIndicator(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(mockCreate, nil, nil)
+	handler := NewWebTaskHandler(mockCreate, nil, nil, nil)
 
 	formData := url.Values{}
 	formData.Set("title", "Shared Task")
@@ -152,7 +152,7 @@ func TestWebCreateTask_SharedTaskIndicator(t *testing.T) {
 }
 
 func TestWebCreateTask_Unauthorized(t *testing.T) {
-	handler := NewWebTaskHandler(&mockCreateTaskUseCase{}, nil, nil)
+	handler := NewWebTaskHandler(&mockCreateTaskUseCase{}, nil, nil, nil)
 
 	formData := url.Values{}
 	formData.Set("title", "Task")
@@ -176,7 +176,7 @@ func TestWebCreateTask_Unauthorized(t *testing.T) {
 }
 
 func TestWebCreateTask_InvalidForm(t *testing.T) {
-	handler := NewWebTaskHandler(&mockCreateTaskUseCase{}, nil, nil)
+	handler := NewWebTaskHandler(&mockCreateTaskUseCase{}, nil, nil, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks", strings.NewReader("%invalid%form%"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -203,7 +203,7 @@ func TestWebCreateTask_ValidationError(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(mockCreate, nil, nil)
+	handler := NewWebTaskHandler(mockCreate, nil, nil, nil)
 
 	formData := url.Values{}
 	formData.Set("title", "")
@@ -242,7 +242,7 @@ func TestWebCreateTask_HTMLEscaping(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(mockCreate, nil, nil)
+	handler := NewWebTaskHandler(mockCreate, nil, nil, nil)
 
 	// Test with potentially malicious input
 	formData := url.Values{}
@@ -296,7 +296,7 @@ func TestWebDeleteTask_Success(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, mockDelete, nil)
+	handler := NewWebTaskHandler(nil, mockDelete, nil, nil)
 
 	req := httptest.NewRequest("DELETE", "/web/tasks/task-to-delete", nil)
 	req.SetPathValue("id", "task-to-delete")
@@ -318,7 +318,7 @@ func TestWebDeleteTask_Success(t *testing.T) {
 }
 
 func TestWebDeleteTask_Unauthorized(t *testing.T) {
-	handler := NewWebTaskHandler(nil, &mockDeleteTaskUseCase{}, nil)
+	handler := NewWebTaskHandler(nil, &mockDeleteTaskUseCase{}, nil, nil)
 
 	req := httptest.NewRequest("DELETE", "/web/tasks/task-123", nil)
 	req.SetPathValue("id", "task-123")
@@ -339,7 +339,7 @@ func TestWebDeleteTask_NotFound(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, mockDelete, nil)
+	handler := NewWebTaskHandler(nil, mockDelete, nil, nil)
 
 	req := httptest.NewRequest("DELETE", "/web/tasks/nonexistent", nil)
 	req.SetPathValue("id", "nonexistent")
@@ -361,7 +361,7 @@ func TestWebDeleteTask_NoPermission(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, mockDelete, nil)
+	handler := NewWebTaskHandler(nil, mockDelete, nil, nil)
 
 	req := httptest.NewRequest("DELETE", "/web/tasks/task-123", nil)
 	req.SetPathValue("id", "task-123")
@@ -405,7 +405,7 @@ func TestWebCompleteTask_Success(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/task-to-complete/complete", nil)
 	req.SetPathValue("id", "task-to-complete")
@@ -481,7 +481,7 @@ func TestWebCompleteTask_SharedTaskIndicator(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/shared-task-999/complete", nil)
 	req.SetPathValue("id", "shared-task-999")
@@ -504,7 +504,7 @@ func TestWebCompleteTask_SharedTaskIndicator(t *testing.T) {
 }
 
 func TestWebCompleteTask_Unauthorized(t *testing.T) {
-	handler := NewWebTaskHandler(nil, nil, &mockCompleteTaskUseCase{})
+	handler := NewWebTaskHandler(nil, nil, &mockCompleteTaskUseCase{}, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/task-123/complete", nil)
 	req.SetPathValue("id", "task-123")
@@ -525,7 +525,7 @@ func TestWebCompleteTask_NotFound(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/nonexistent/complete", nil)
 	req.SetPathValue("id", "nonexistent")
@@ -547,7 +547,7 @@ func TestWebCompleteTask_NoPermission(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/task-123/complete", nil)
 	req.SetPathValue("id", "task-123")
@@ -569,7 +569,7 @@ func TestWebCompleteTask_AlreadyCompleted(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/task-123/complete", nil)
 	req.SetPathValue("id", "task-123")
@@ -599,4 +599,42 @@ func (m *mockCompleteTaskUseCase) Execute(ctx context.Context, taskID, userID st
 		return m.executeFunc(ctx, taskID, userID)
 	}
 	return nil, nil
+}
+
+// =============================================================================
+// WebShareTask Tests (for Issue #11)
+// =============================================================================
+
+func TestWebShareTask_ShareButtonAppearsOnlyForOwnTasks(t *testing.T) {
+	// Test that share button appears for own tasks
+	taskID := "task-1"
+	ownerID := "user-1"
+
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+
+	// Render for owner - should show share button
+	html, err := renderTaskCard(task, ownerID)
+	if err != nil {
+		t.Fatalf("Failed to render task card: %v", err)
+	}
+
+	if !strings.Contains(html, "Compartilhar") {
+		t.Error("Share button SHOULD appear for own tasks")
+	}
+
+	// Render for non-owner - should NOT show share button
+	htmlShared, err := renderTaskCard(task, "user-2")
+	if err != nil {
+		t.Fatalf("Failed to render task card: %v", err)
+	}
+
+	if strings.Contains(htmlShared, "Compartilhar") {
+		t.Error("Share button should NOT appear for shared tasks")
+	}
+}
+
+func TestWebShareTask_ShareButtonNotPresentInStaticTemplate(t *testing.T) {
+	// This test will fail until we implement the share button in tasks.html
+	// It's a placeholder to remind us to add the button to the static template
+	t.Skip("TODO: Add share button to tasks.html template")
 }

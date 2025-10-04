@@ -11,7 +11,11 @@
       "Bash(go build:*)",
       "Bash(./todo-app)",
       "Bash(export:*)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
