@@ -25,9 +25,9 @@ func NewWebTaskHandler(
 
 // CreateTask handles web form submission
 func (h *WebTaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from header (set by HTMX)
-	userID := r.Header.Get("X-User-ID")
-	if userID == "" {
+	// Get user ID from context (set by auth middleware)
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -64,7 +64,6 @@ func (h *WebTaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 			</div>
 			<div class="flex space-x-2 ml-4">
 				<button hx-delete="/web/tasks/` + task.ID + `" hx-target="#task-` + task.ID + `" hx-swap="outerHTML"
-						hx-headers='{"X-User-ID": "` + userID + `"}'
 						hx-confirm="Tem certeza que deseja excluir esta tarefa?"
 						class="text-red-600 hover:text-red-800">
 					Excluir
@@ -78,8 +77,9 @@ func (h *WebTaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 // DeleteTask handles task deletion
 func (h *WebTaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("X-User-ID")
-	if userID == "" {
+	// Get user ID from context (set by auth middleware)
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}

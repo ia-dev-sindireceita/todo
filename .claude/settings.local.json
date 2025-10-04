@@ -9,7 +9,8 @@
       "Bash(export PATH=$PATH:~/go/go/bin)",
       "Bash(go get:*)",
       "Bash(go build:*)",
-      "Bash(./todo-app)"
+      "Bash(./todo-app)",
+      "Bash(export:*)"
     ],
     "deny": [],
     "ask": []

@@ -13,6 +13,9 @@ import (
 )
 
 func main() {
+	// JWT secret - in production, load from environment variable
+	jwtSecret := "your-secret-key-change-in-production"
+
 	// Initialize database
 	db, err := database.NewSQLiteDB("todo.db")
 	if err != nil {
@@ -22,7 +25,7 @@ func main() {
 
 	// Initialize repositories
 	taskRepo := database.NewSQLiteTaskRepository(db)
-	_ = database.NewSQLiteUserRepository(db) // userRepo for future use
+	userRepo := database.NewSQLiteUserRepository(db)
 	shareRepo := database.NewSQLiteShareRepository(db)
 
 	// Initialize services
@@ -38,6 +41,10 @@ func main() {
 	_ = usecases.NewShareTaskUseCase(taskRepo, shareRepo, taskService)     // shareTask for future use
 	_ = usecases.NewUnshareTaskUseCase(shareRepo, taskService)            // unshareTask for future use
 
+	// Auth use cases
+	loginUseCase := usecases.NewLoginUseCase(userRepo, jwtSecret)
+	registerUseCase := usecases.NewRegisterUseCase(userRepo, jwtSecret)
+
 	// Initialize handlers
 	taskHandler := handler.NewTaskHandler(
 		createTask,
@@ -51,10 +58,13 @@ func main() {
 	// Web handlers (for HTMX forms)
 	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask)
 
+	// Auth handlers
+	authHandler := handler.NewAuthHandler(loginUseCase, registerUseCase)
+
 	// Setup router
 	mux := http.NewServeMux()
 
-	// API routes (protected)
+	// API routes (protected with JWT)
 	apiMux := http.NewServeMux()
 	apiMux.HandleFunc("POST /tasks", taskHandler.CreateTask)
 	apiMux.HandleFunc("GET /tasks", taskHandler.ListTasks)
@@ -66,19 +76,49 @@ func main() {
 	// Apply auth middleware to API routes
 	mux.Handle("/api/", http.StripPrefix("/api", middleware.Chain(
 		apiMux,
-		middleware.AuthMiddleware,
+		middleware.AuthMiddleware(jwtSecret),
 		middleware.ContentTypeJSON,
 	)))
 
-	// Web routes (HTML)
+	// Auth API routes (no auth required)
+	authMux := http.NewServeMux()
+	authMux.HandleFunc("POST /login", authHandler.Login)
+	authMux.HandleFunc("POST /register", authHandler.Register)
+	mux.Handle("/api/auth/", http.StripPrefix("/api/auth", middleware.Chain(
+		authMux,
+		middleware.ContentTypeJSON,
+	)))
+
+	// Web routes (HTML - no auth required)
 	webMux := http.NewServeMux()
 	webMux.HandleFunc("/", handleIndex)
-	webMux.HandleFunc("/tasks", handleTasksPage(listTasks))
+	webMux.HandleFunc("/login", handleLoginPage)
+	webMux.HandleFunc("/register", handleRegisterPage)
 	mux.Handle("/", webMux)
 
-	// Web API routes (for HTMX - no auth middleware needed, uses headers)
-	mux.HandleFunc("POST /web/tasks", webTaskHandler.CreateTask)
-	mux.HandleFunc("DELETE /web/tasks/{id}", webTaskHandler.DeleteTask)
+	// Web auth routes (no auth required)
+	mux.HandleFunc("POST /web/auth/login", authHandler.WebLogin)
+	mux.HandleFunc("POST /web/auth/register", authHandler.WebRegister)
+	mux.HandleFunc("POST /web/auth/logout", authHandler.Logout)
+
+	// Protected web routes (require JWT)
+	protectedWebMux := http.NewServeMux()
+	protectedWebMux.HandleFunc("/tasks", handleTasksPage(listTasks))
+	mux.Handle("/tasks", middleware.AuthMiddleware(jwtSecret)(protectedWebMux))
+
+	// Web API routes (for HTMX - require JWT)
+	protectedWebAPIHandler := middleware.AuthMiddleware(jwtSecret)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == "POST" && r.URL.Path == "/web/tasks":
+			webTaskHandler.CreateTask(w, r)
+		case r.Method == "DELETE" && len(r.URL.Path) > len("/web/tasks/"):
+			webTaskHandler.DeleteTask(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	mux.Handle("/web/tasks", protectedWebAPIHandler)
+	mux.Handle("/web/tasks/", protectedWebAPIHandler)
 
 	// Apply global middlewares
 	handler := middleware.Chain(
@@ -104,14 +144,47 @@ func main() {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/tasks", http.StatusFound)
+	http.Redirect(w, r, "/login", http.StatusFound)
+}
+
+func handleLoginPage(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles(
+		"internal/infrastructure/templates/base.html",
+		"internal/infrastructure/templates/login.html",
+	))
+
+	data := map[string]interface{}{
+		"Title": "Login",
+	}
+
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func handleRegisterPage(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles(
+		"internal/infrastructure/templates/base.html",
+		"internal/infrastructure/templates/register.html",
+	))
+
+	data := map[string]interface{}{
+		"Title": "Cadastro",
+	}
+
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func handleTasksPage(listTasks *usecases.ListTasksUseCase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// For demo, use a hardcoded user ID
-		// In production, get this from session/JWT
-		userID := "user-1"
+		// Get user ID from context (set by auth middleware)
+		userID, ok := r.Context().Value("userID").(string)
+		if !ok || userID == "" {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 
 		tasks, err := listTasks.Execute(r.Context(), userID)
 		if err != nil {
