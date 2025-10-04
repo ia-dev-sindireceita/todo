@@ -10,7 +10,8 @@
       "Bash(go get:*)",
       "Bash(go build:*)",
       "Bash(./todo-app)",
-      "Bash(export:*)"
+      "Bash(export:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [],
     "ask": []

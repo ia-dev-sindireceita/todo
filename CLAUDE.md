@@ -10,6 +10,37 @@ This is a Go project: `github.com/ia-edev-sindireceita/todo`
 - Architecture: Hexagonal Architecture
 - Development approach: Test-Driven Development (TDD)
 
+## Workflow
+
+### Branching Strategy
+
+**MANDATORY**: All development must follow this workflow:
+
+1. **Create a feature branch** for each task/issue:
+   ```bash
+   git checkout -b feature/descriptive-name
+   # or
+   git checkout -b fix/bug-description
+   ```
+
+2. **Work on the branch** following TDD principles
+
+3. **Commit changes** with clear, descriptive messages
+
+4. **Create a Pull Request** to `main` when done:
+   ```bash
+   gh pr create --base main --head feature/descriptive-name
+   ```
+
+5. **Never commit directly to `main`**
+
+Branch naming conventions:
+- `feature/` - New features
+- `fix/` - Bug fixes
+- `refactor/` - Code refactoring
+- `docs/` - Documentation updates
+- `test/` - Test additions or fixes
+
 ## Commands
 
 ### Build
