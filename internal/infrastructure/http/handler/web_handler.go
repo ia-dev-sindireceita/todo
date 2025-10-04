@@ -8,16 +8,16 @@ import (
 
 // WebTaskHandler handles web requests (form data -> JSON)
 type WebTaskHandler struct {
-	createTask   *usecases.CreateTaskUseCase
-	deleteTask   *usecases.DeleteTaskUseCase
-	completeTask *usecases.CompleteTaskUseCase
+	createTask   usecases.CreateTaskUseCaseInterface
+	deleteTask   usecases.DeleteTaskUseCaseInterface
+	completeTask usecases.CompleteTaskUseCaseInterface
 }
 
 // NewWebTaskHandler creates a new WebTaskHandler
 func NewWebTaskHandler(
-	createTask *usecases.CreateTaskUseCase,
-	deleteTask *usecases.DeleteTaskUseCase,
-	completeTask *usecases.CompleteTaskUseCase,
+	createTask usecases.CreateTaskUseCaseInterface,
+	deleteTask usecases.DeleteTaskUseCaseInterface,
+	completeTask usecases.CompleteTaskUseCaseInterface,
 ) *WebTaskHandler {
 	return &WebTaskHandler{
 		createTask:   createTask,
