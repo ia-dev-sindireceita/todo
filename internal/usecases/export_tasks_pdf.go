@@ -31,45 +31,48 @@ func (uc *ExportTasksPDFUseCase) Execute(ctx context.Context, ownerID string) ([
 		return nil, fmt.Errorf("failed to retrieve tasks: %w", err)
 	}
 
-	// Create PDF
+	// Create PDF with UTF-8 support
 	pdf := gofpdf.New("P", "mm", "A4", "")
+
+	// Add UTF-8 font support
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.AddPage()
 
 	// Set title
 	pdf.SetFont("Arial", "B", 24)
-	pdf.CellFormat(190, 10, "Minhas Tarefas", "", 1, "C", false, 0, "")
+	pdf.CellFormat(190, 10, tr("Minhas Tarefas"), "", 1, "C", false, 0, "")
 	pdf.Ln(5)
 
 	// Add generation date
 	pdf.SetFont("Arial", "I", 10)
-	pdf.CellFormat(190, 6, fmt.Sprintf("Gerado em: %s", time.Now().Format("02/01/2006 15:04:05")), "", 1, "C", false, 0, "")
+	pdf.CellFormat(190, 6, tr(fmt.Sprintf("Gerado em: %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
 	pdf.Ln(10)
 
 	// Add tasks
 	if len(tasks) == 0 {
 		pdf.SetFont("Arial", "", 12)
-		pdf.CellFormat(190, 10, "Nenhuma tarefa encontrada.", "", 1, "L", false, 0, "")
+		pdf.CellFormat(190, 10, tr("Nenhuma tarefa encontrada."), "", 1, "L", false, 0, "")
 	} else {
 		for i, task := range tasks {
 			// Task number and title
 			pdf.SetFont("Arial", "B", 14)
-			pdf.CellFormat(190, 8, fmt.Sprintf("%d. %s", i+1, task.Title), "", 1, "L", false, 0, "")
+			pdf.CellFormat(190, 8, tr(fmt.Sprintf("%d. %s", i+1, task.Title)), "", 1, "L", false, 0, "")
 			pdf.Ln(2)
 
 			// Status
 			pdf.SetFont("Arial", "", 11)
 			statusText := getStatusText(task.Status)
-			pdf.CellFormat(190, 6, fmt.Sprintf("Status: %s", statusText), "", 1, "L", false, 0, "")
+			pdf.CellFormat(190, 6, tr(fmt.Sprintf("Status: %s", statusText)), "", 1, "L", false, 0, "")
 
 			// Description
 			if task.Description != "" {
 				pdf.SetFont("Arial", "", 11)
-				pdf.MultiCell(190, 5, fmt.Sprintf("Descricao: %s", task.Description), "", "L", false)
+				pdf.MultiCell(190, 5, tr(fmt.Sprintf("Descricao: %s", task.Description)), "", "L", false)
 			}
 
 			// Created date
 			pdf.SetFont("Arial", "I", 9)
-			pdf.CellFormat(190, 5, fmt.Sprintf("Criada em: %s", task.CreatedAt.Format("02/01/2006 15:04")), "", 1, "L", false, 0, "")
+			pdf.CellFormat(190, 5, tr(fmt.Sprintf("Criada em: %s", task.CreatedAt.Format("02/01/2006 15:04"))), "", 1, "L", false, 0, "")
 
 			// Add spacing between tasks
 			pdf.Ln(8)
@@ -94,7 +97,7 @@ func getStatusText(status application.TaskStatus) string {
 	case application.StatusInProgress:
 		return "Em Progresso"
 	case application.StatusCompleted:
-		return "Concluída"
+		return "Concluida"
 	default:
 		return "Desconhecido"
 	}
