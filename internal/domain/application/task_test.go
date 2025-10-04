@@ -325,3 +325,156 @@ func TestTask_CompleteTask(t *testing.T) {
 	}
 }
 
+func TestTask_RemoveImage(t *testing.T) {
+	tests := []struct {
+		name      string
+		status    TaskStatus
+		imagePath string
+		wantErr   bool
+		errMsg    string
+	}{
+		{
+			name:      "should remove image from pending task",
+			status:    StatusPending,
+			imagePath: "/uploads/images/test.jpg",
+			wantErr:   false,
+		},
+		{
+			name:      "should remove image from in_progress task",
+			status:    StatusInProgress,
+			imagePath: "/uploads/images/test.jpg",
+			wantErr:   false,
+		},
+		{
+			name:      "should fail to remove image from completed task",
+			status:    StatusCompleted,
+			imagePath: "/uploads/images/test.jpg",
+			wantErr:   true,
+			errMsg:    "cannot remove image from completed task",
+		},
+		{
+			name:      "should fail when no image exists",
+			status:    StatusPending,
+			imagePath: "",
+			wantErr:   true,
+			errMsg:    "task has no image to remove",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			task, _ := NewTask("task-1", "Test Task", "Description", tt.status, "user-1", tt.imagePath)
+			oldUpdatedAt := task.UpdatedAt
+			time.Sleep(1 * time.Millisecond)
+
+			err := task.RemoveImage()
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("RemoveImage() expected error but got nil")
+					return
+				}
+				if err.Error() != tt.errMsg {
+					t.Errorf("RemoveImage() error = %v, want %v", err.Error(), tt.errMsg)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("RemoveImage() unexpected error: %v", err)
+			}
+
+			if task.ImagePath != "" {
+				t.Errorf("RemoveImage() ImagePath = %v, want empty string", task.ImagePath)
+			}
+
+			if !task.UpdatedAt.After(oldUpdatedAt) {
+				t.Errorf("RemoveImage() did not update UpdatedAt")
+			}
+		})
+	}
+}
+
+func TestTask_ReplaceImage(t *testing.T) {
+	tests := []struct {
+		name         string
+		status       TaskStatus
+		oldImagePath string
+		newImagePath string
+		wantErr      bool
+		errMsg       string
+	}{
+		{
+			name:         "should replace image in pending task",
+			status:       StatusPending,
+			oldImagePath: "/uploads/images/old.jpg",
+			newImagePath: "/uploads/images/new.jpg",
+			wantErr:      false,
+		},
+		{
+			name:         "should replace image in in_progress task",
+			status:       StatusInProgress,
+			oldImagePath: "/uploads/images/old.jpg",
+			newImagePath: "/uploads/images/new.jpg",
+			wantErr:      false,
+		},
+		{
+			name:         "should fail to replace image in completed task",
+			status:       StatusCompleted,
+			oldImagePath: "/uploads/images/old.jpg",
+			newImagePath: "/uploads/images/new.jpg",
+			wantErr:      true,
+			errMsg:       "cannot replace image in completed task",
+		},
+		{
+			name:         "should fail when new image path is empty",
+			status:       StatusPending,
+			oldImagePath: "/uploads/images/old.jpg",
+			newImagePath: "",
+			wantErr:      true,
+			errMsg:       "new image path cannot be empty",
+		},
+		{
+			name:         "should fail when new image path is too long",
+			status:       StatusPending,
+			oldImagePath: "/uploads/images/old.jpg",
+			newImagePath: strings.Repeat("a", 501),
+			wantErr:      true,
+			errMsg:       "image path cannot exceed 500 characters",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			task, _ := NewTask("task-1", "Test Task", "Description", tt.status, "user-1", tt.oldImagePath)
+			oldUpdatedAt := task.UpdatedAt
+			time.Sleep(1 * time.Millisecond)
+
+			err := task.ReplaceImage(tt.newImagePath)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("ReplaceImage() expected error but got nil")
+					return
+				}
+				if err.Error() != tt.errMsg {
+					t.Errorf("ReplaceImage() error = %v, want %v", err.Error(), tt.errMsg)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("ReplaceImage() unexpected error: %v", err)
+			}
+
+			if task.ImagePath != tt.newImagePath {
+				t.Errorf("ReplaceImage() ImagePath = %v, want %v", task.ImagePath, tt.newImagePath)
+			}
+
+			if !task.UpdatedAt.After(oldUpdatedAt) {
+				t.Errorf("ReplaceImage() did not update UpdatedAt")
+			}
+		})
+	}
+}
+

@@ -48,6 +48,8 @@ func main() {
 	shareTask := usecases.NewShareTaskUseCase(taskRepo, shareRepo, taskService)
 	exportTasksPDF := usecases.NewExportTasksPDFUseCase(taskRepo)
 	_ = usecases.NewUnshareTaskUseCase(shareRepo, taskService)            // unshareTask for future use
+	deleteTaskImage := usecases.NewDeleteTaskImageUseCase(taskRepo, taskService)
+	replaceTaskImage := usecases.NewReplaceTaskImageUseCase(taskRepo, taskService)
 
 	// Auth use cases
 	loginUseCase := usecases.NewLoginUseCase(userRepo, jwtSecret)
@@ -64,7 +66,7 @@ func main() {
 	)
 
 	// Web handlers (for HTMX forms)
-	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask, completeTask, shareTask)
+	webTaskHandler := handler.NewWebTaskHandler(createTask, deleteTask, completeTask, shareTask, deleteTaskImage, replaceTaskImage)
 
 	// Auth handlers
 	authHandler := handler.NewAuthHandler(loginUseCase, registerUseCase)
@@ -127,6 +129,8 @@ func main() {
 	protectedWebAPIMux.HandleFunc("POST /web/tasks/{id}/complete", webTaskHandler.CompleteTask)
 	protectedWebAPIMux.HandleFunc("POST /web/tasks/{id}/share", webTaskHandler.ShareTask)
 	protectedWebAPIMux.HandleFunc("DELETE /web/tasks/{id}", webTaskHandler.DeleteTask)
+	protectedWebAPIMux.HandleFunc("DELETE /web/tasks/{id}/image", webTaskHandler.DeleteTaskImage)
+	protectedWebAPIMux.HandleFunc("PUT /web/tasks/{id}/image", webTaskHandler.ReplaceTaskImage)
 
 	mux.Handle("/web/tasks", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))
 	mux.Handle("/web/tasks/", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))

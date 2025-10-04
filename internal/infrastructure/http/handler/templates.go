@@ -20,6 +20,8 @@ type TaskTemplateData struct {
 	ShowShare      bool
 	OwnershipClass string
 	OwnershipText  string
+	ImagePath      string
+	IsOwner        bool
 }
 
 var (
@@ -29,6 +31,41 @@ var (
 			<div class="flex-1">
 				<h3 class="text-lg font-semibold text-gray-900">{{.Title}}</h3>
 				<p class="text-gray-600 mt-1">{{.Description}}</p>
+				{{if .ImagePath}}
+				<div class="mt-3" id="task-{{.ID}}-image">
+					<img src="{{.ImagePath}}" alt="Task image" class="max-w-[200px] max-h-[200px] object-cover rounded-lg shadow-sm">
+					{{if .ShowComplete}}
+					{{if .IsOwner}}
+					<div class="mt-2 flex space-x-2">
+						<button hx-delete="/web/tasks/{{.ID}}/image"
+								hx-target="#task-{{.ID}}-image"
+								hx-swap="outerHTML"
+								hx-confirm="Tem certeza que deseja excluir esta imagem?"
+								class="text-red-600 hover:text-red-800 text-sm">
+							<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+							</svg>
+							Excluir imagem
+						</button>
+						<label class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer">
+							<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+							</svg>
+							Substituir imagem
+							<input type="file"
+								   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+								   hx-put="/web/tasks/{{.ID}}/image"
+								   hx-encoding="multipart/form-data"
+								   hx-target="#task-{{.ID}}-image"
+								   hx-swap="outerHTML"
+								   name="image"
+								   class="hidden">
+						</label>
+					</div>
+					{{end}}
+					{{end}}
+				</div>
+				{{end}}
 				<div class="mt-2 flex items-center space-x-2">
 					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{.StatusClass}}">
 						{{.StatusText}}
@@ -114,6 +151,8 @@ func renderTaskCard(task *application.Task, currentUserID string) (string, error
 		CreatedAt:    task.CreatedAt.Format("02/01/2006 15:04"),
 		ShowComplete: task.Status == application.StatusPending,
 		ShowShare:    isOwner && task.Status != application.StatusCompleted,
+		ImagePath:    task.ImagePath,
+		IsOwner:      isOwner,
 	}
 
 	// Set status badge styling based on status

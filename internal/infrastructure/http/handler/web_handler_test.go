@@ -42,7 +42,7 @@ func TestWebCreateTask_Success(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(mockCreate, nil, nil, nil)
+	handler := NewWebTaskHandler(mockCreate, nil, nil, nil, nil, nil)
 
 	formData := url.Values{}
 	formData.Set("title", "New Web Task")
@@ -126,7 +126,7 @@ func TestWebCreateTask_SharedTaskIndicator(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(mockCreate, nil, nil, nil)
+	handler := NewWebTaskHandler(mockCreate, nil, nil, nil, nil, nil)
 
 	formData := url.Values{}
 	formData.Set("title", "Shared Task")
@@ -153,7 +153,7 @@ func TestWebCreateTask_SharedTaskIndicator(t *testing.T) {
 }
 
 func TestWebCreateTask_Unauthorized(t *testing.T) {
-	handler := NewWebTaskHandler(&mockCreateTaskUseCase{}, nil, nil, nil)
+	handler := NewWebTaskHandler(&mockCreateTaskUseCase{}, nil, nil, nil, nil, nil)
 
 	formData := url.Values{}
 	formData.Set("title", "Task")
@@ -190,7 +190,7 @@ func TestWebCreateTask_ValidationError(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(mockCreate, nil, nil, nil)
+	handler := NewWebTaskHandler(mockCreate, nil, nil, nil, nil, nil)
 
 	formData := url.Values{}
 	formData.Set("title", "")
@@ -229,7 +229,7 @@ func TestWebCreateTask_HTMLEscaping(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(mockCreate, nil, nil, nil)
+	handler := NewWebTaskHandler(mockCreate, nil, nil, nil, nil, nil)
 
 	// Test with potentially malicious input
 	formData := url.Values{}
@@ -283,7 +283,7 @@ func TestWebDeleteTask_Success(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, mockDelete, nil, nil)
+	handler := NewWebTaskHandler(nil, mockDelete, nil, nil, nil, nil)
 
 	req := httptest.NewRequest("DELETE", "/web/tasks/task-to-delete", nil)
 	req.SetPathValue("id", "task-to-delete")
@@ -305,7 +305,7 @@ func TestWebDeleteTask_Success(t *testing.T) {
 }
 
 func TestWebDeleteTask_Unauthorized(t *testing.T) {
-	handler := NewWebTaskHandler(nil, &mockDeleteTaskUseCase{}, nil, nil)
+	handler := NewWebTaskHandler(nil, &mockDeleteTaskUseCase{}, nil, nil, nil, nil)
 
 	req := httptest.NewRequest("DELETE", "/web/tasks/task-123", nil)
 	req.SetPathValue("id", "task-123")
@@ -326,7 +326,7 @@ func TestWebDeleteTask_NotFound(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, mockDelete, nil, nil)
+	handler := NewWebTaskHandler(nil, mockDelete, nil, nil, nil, nil)
 
 	req := httptest.NewRequest("DELETE", "/web/tasks/nonexistent", nil)
 	req.SetPathValue("id", "nonexistent")
@@ -348,7 +348,7 @@ func TestWebDeleteTask_NoPermission(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, mockDelete, nil, nil)
+	handler := NewWebTaskHandler(nil, mockDelete, nil, nil, nil, nil)
 
 	req := httptest.NewRequest("DELETE", "/web/tasks/task-123", nil)
 	req.SetPathValue("id", "task-123")
@@ -392,7 +392,7 @@ func TestWebCompleteTask_Success(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil, nil, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/task-to-complete/complete", nil)
 	req.SetPathValue("id", "task-to-complete")
@@ -468,7 +468,7 @@ func TestWebCompleteTask_SharedTaskIndicator(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil, nil, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/shared-task-999/complete", nil)
 	req.SetPathValue("id", "shared-task-999")
@@ -491,7 +491,7 @@ func TestWebCompleteTask_SharedTaskIndicator(t *testing.T) {
 }
 
 func TestWebCompleteTask_Unauthorized(t *testing.T) {
-	handler := NewWebTaskHandler(nil, nil, &mockCompleteTaskUseCase{}, nil)
+	handler := NewWebTaskHandler(nil, nil, &mockCompleteTaskUseCase{}, nil, nil, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/task-123/complete", nil)
 	req.SetPathValue("id", "task-123")
@@ -512,7 +512,7 @@ func TestWebCompleteTask_NotFound(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil, nil, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/nonexistent/complete", nil)
 	req.SetPathValue("id", "nonexistent")
@@ -534,7 +534,7 @@ func TestWebCompleteTask_NoPermission(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil, nil, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/task-123/complete", nil)
 	req.SetPathValue("id", "task-123")
@@ -556,7 +556,7 @@ func TestWebCompleteTask_AlreadyCompleted(t *testing.T) {
 		},
 	}
 
-	handler := NewWebTaskHandler(nil, nil, mockComplete, nil)
+	handler := NewWebTaskHandler(nil, nil, mockComplete, nil, nil, nil)
 
 	req := httptest.NewRequest("POST", "/web/tasks/task-123/complete", nil)
 	req.SetPathValue("id", "task-123")

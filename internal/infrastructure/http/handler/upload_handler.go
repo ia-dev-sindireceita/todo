@@ -138,3 +138,26 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 		"path": path,
 	})
 }
+
+// DeleteImage deletes an image file from the filesystem
+func (h *UploadHandler) DeleteImage(imagePath string) error {
+	if imagePath == "" {
+		return nil
+	}
+
+	// Extract filename from path (e.g., "/uploads/images/filename.jpg" -> "filename.jpg")
+	filename := filepath.Base(imagePath)
+	if filename == "." || filename == "/" {
+		return fmt.Errorf("invalid image path")
+	}
+
+	// Construct full file path
+	fullPath := filepath.Join(h.uploadDir, filename)
+
+	// Delete the file (ignore error if file doesn't exist)
+	if err := os.Remove(fullPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("error deleting file: %w", err)
+	}
+
+	return nil
+}
