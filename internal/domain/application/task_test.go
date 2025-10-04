@@ -1,6 +1,7 @@
 package application
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -13,6 +14,7 @@ func TestNewTask(t *testing.T) {
 		description string
 		status      TaskStatus
 		ownerID     string
+		imagePath   string
 		wantErr     bool
 		errMsg      string
 	}{
@@ -23,7 +25,29 @@ func TestNewTask(t *testing.T) {
 			description: "Milk, bread, eggs",
 			status:      StatusPending,
 			ownerID:     "user-1",
+			imagePath:   "",
 			wantErr:     false,
+		},
+		{
+			name:        "valid task with image",
+			id:          "task-2",
+			title:       "Buy groceries",
+			description: "Milk, bread, eggs",
+			status:      StatusPending,
+			ownerID:     "user-1",
+			imagePath:   "/uploads/images/abc123.jpg",
+			wantErr:     false,
+		},
+		{
+			name:        "image path too long",
+			id:          "task-3",
+			title:       "Buy groceries",
+			description: "Milk, bread, eggs",
+			status:      StatusPending,
+			ownerID:     "user-1",
+			imagePath:   strings.Repeat("a", 501),
+			wantErr:     true,
+			errMsg:      "image path cannot exceed 500 characters",
 		},
 		{
 			name:        "empty id",
@@ -32,6 +56,7 @@ func TestNewTask(t *testing.T) {
 			description: "Milk, bread, eggs",
 			status:      StatusPending,
 			ownerID:     "user-1",
+			imagePath:   "",
 			wantErr:     true,
 			errMsg:      "task id cannot be empty",
 		},
@@ -42,6 +67,7 @@ func TestNewTask(t *testing.T) {
 			description: "Milk, bread, eggs",
 			status:      StatusPending,
 			ownerID:     "user-1",
+			imagePath:   "",
 			wantErr:     true,
 			errMsg:      "task title cannot be empty",
 		},
@@ -52,6 +78,7 @@ func TestNewTask(t *testing.T) {
 			description: "Milk, bread, eggs",
 			status:      StatusPending,
 			ownerID:     "user-1",
+			imagePath:   "",
 			wantErr:     true,
 			errMsg:      "task title cannot exceed 200 characters",
 		},
@@ -62,6 +89,7 @@ func TestNewTask(t *testing.T) {
 			description: string(make([]byte, 1001)),
 			status:      StatusPending,
 			ownerID:     "user-1",
+			imagePath:   "",
 			wantErr:     true,
 			errMsg:      "task description cannot exceed 1000 characters",
 		},
@@ -72,6 +100,7 @@ func TestNewTask(t *testing.T) {
 			description: "Milk, bread, eggs",
 			status:      StatusPending,
 			ownerID:     "",
+			imagePath:   "",
 			wantErr:     true,
 			errMsg:      "task owner id cannot be empty",
 		},
@@ -82,6 +111,7 @@ func TestNewTask(t *testing.T) {
 			description: "Milk, bread, eggs",
 			status:      TaskStatus("invalid"),
 			ownerID:     "user-1",
+			imagePath:   "",
 			wantErr:     true,
 			errMsg:      "invalid task status",
 		},
@@ -89,7 +119,7 @@ func TestNewTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, err := NewTask(tt.id, tt.title, tt.description, tt.status, tt.ownerID)
+			task, err := NewTask(tt.id, tt.title, tt.description, tt.status, tt.ownerID, tt.imagePath)
 
 			if tt.wantErr {
 				if err == nil {
@@ -122,6 +152,9 @@ func TestNewTask(t *testing.T) {
 			if task.OwnerID != tt.ownerID {
 				t.Errorf("Task.OwnerID = %v, want %v", task.OwnerID, tt.ownerID)
 			}
+			if task.ImagePath != tt.imagePath {
+				t.Errorf("Task.ImagePath = %v, want %v", task.ImagePath, tt.imagePath)
+			}
 			if task.CreatedAt.IsZero() {
 				t.Error("Task.CreatedAt should not be zero")
 			}
@@ -133,7 +166,7 @@ func TestNewTask(t *testing.T) {
 }
 
 func TestTask_Update(t *testing.T) {
-	task, err := NewTask("task-1", "Original title", "Original description", StatusPending, "user-1")
+	task, err := NewTask("task-1", "Original title", "Original description", StatusPending, "user-1", "")
 	if err != nil {
 		t.Fatalf("Failed to create task: %v", err)
 	}
@@ -146,6 +179,7 @@ func TestTask_Update(t *testing.T) {
 		title       string
 		description string
 		status      TaskStatus
+		imagePath   string
 		wantErr     bool
 		errMsg      string
 	}{
@@ -154,13 +188,32 @@ func TestTask_Update(t *testing.T) {
 			title:       "Updated title",
 			description: "Updated description",
 			status:      StatusInProgress,
+			imagePath:   "",
 			wantErr:     false,
+		},
+		{
+			name:        "valid update with image",
+			title:       "Updated title",
+			description: "Updated description",
+			status:      StatusInProgress,
+			imagePath:   "/uploads/images/new.jpg",
+			wantErr:     false,
+		},
+		{
+			name:        "image path too long",
+			title:       "Updated title",
+			description: "Updated description",
+			status:      StatusInProgress,
+			imagePath:   strings.Repeat("a", 501),
+			wantErr:     true,
+			errMsg:      "image path cannot exceed 500 characters",
 		},
 		{
 			name:        "empty title",
 			title:       "",
 			description: "Updated description",
 			status:      StatusInProgress,
+			imagePath:   "",
 			wantErr:     true,
 			errMsg:      "task title cannot be empty",
 		},
@@ -169,6 +222,7 @@ func TestTask_Update(t *testing.T) {
 			title:       "Updated title",
 			description: "Updated description",
 			status:      TaskStatus("invalid"),
+			imagePath:   "",
 			wantErr:     true,
 			errMsg:      "invalid task status",
 		},
@@ -176,7 +230,7 @@ func TestTask_Update(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := task.Update(tt.title, tt.description, tt.status)
+			err := task.Update(tt.title, tt.description, tt.status, tt.imagePath)
 
 			if tt.wantErr {
 				if err == nil {
@@ -202,6 +256,9 @@ func TestTask_Update(t *testing.T) {
 			}
 			if task.Status != tt.status {
 				t.Errorf("Task.Status = %v, want %v", task.Status, tt.status)
+			}
+			if task.ImagePath != tt.imagePath {
+				t.Errorf("Task.ImagePath = %v, want %v", task.ImagePath, tt.imagePath)
 			}
 			if !task.UpdatedAt.After(originalUpdatedAt) {
 				t.Error("Task.UpdatedAt should be updated")
@@ -237,7 +294,7 @@ func TestTask_CompleteTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, _ := NewTask("task-1", "Test Task", "Description", tt.status, "user-1")
+			task, _ := NewTask("task-1", "Test Task", "Description", tt.status, "user-1", "")
 			oldUpdatedAt := task.UpdatedAt
 
 			err := task.CompleteTask()

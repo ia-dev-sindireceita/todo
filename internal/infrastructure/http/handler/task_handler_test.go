@@ -19,12 +19,12 @@ import (
 // =============================================================================
 
 type mockCreateTaskUseCase struct {
-	executeFunc func(ctx context.Context, title, description, ownerID string) (*application.Task, error)
+	executeFunc func(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error)
 }
 
-func (m *mockCreateTaskUseCase) Execute(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+func (m *mockCreateTaskUseCase) Execute(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 	if m.executeFunc != nil {
-		return m.executeFunc(ctx, title, description, ownerID)
+		return m.executeFunc(ctx, title, description, ownerID, imagePath)
 	}
 	return &application.Task{
 		ID:          "task-123",
@@ -57,12 +57,12 @@ func (m *mockGetTaskUseCase) Execute(ctx context.Context, taskID, userID string)
 }
 
 type mockUpdateTaskUseCase struct {
-	executeFunc func(ctx context.Context, taskID, title, description string, status application.TaskStatus, userID string) error
+	executeFunc func(ctx context.Context, taskID, title, description string, status application.TaskStatus, imagePath, userID string) error
 }
 
-func (m *mockUpdateTaskUseCase) Execute(ctx context.Context, taskID, title, description string, status application.TaskStatus, userID string) error {
+func (m *mockUpdateTaskUseCase) Execute(ctx context.Context, taskID, title, description string, status application.TaskStatus, imagePath, userID string) error {
 	if m.executeFunc != nil {
-		return m.executeFunc(ctx, taskID, title, description, status, userID)
+		return m.executeFunc(ctx, taskID, title, description, status, imagePath, userID)
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func (m *mockListSharedTasksUseCase) Execute(ctx context.Context, userID string)
 
 func TestCreateTask_Success(t *testing.T) {
 	mockCreate := &mockCreateTaskUseCase{
-		executeFunc: func(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+		executeFunc: func(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 			if title != "New Task" {
 				t.Errorf("Expected title 'New Task', got %s", title)
 			}
@@ -208,7 +208,7 @@ func TestCreateTask_InvalidJSON(t *testing.T) {
 
 func TestCreateTask_EmptyTitle(t *testing.T) {
 	mockCreate := &mockCreateTaskUseCase{
-		executeFunc: func(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+		executeFunc: func(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 			return nil, errors.New("task title cannot be empty")
 		},
 	}
@@ -240,7 +240,7 @@ func TestCreateTask_EmptyTitle(t *testing.T) {
 
 func TestCreateTask_TitleTooLong(t *testing.T) {
 	mockCreate := &mockCreateTaskUseCase{
-		executeFunc: func(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+		executeFunc: func(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 			if len(title) > 200 {
 				return nil, errors.New("task title cannot exceed 200 characters")
 			}
@@ -372,7 +372,7 @@ func TestGetTask_NoPermission(t *testing.T) {
 
 func TestUpdateTask_Success(t *testing.T) {
 	mockUpdate := &mockUpdateTaskUseCase{
-		executeFunc: func(ctx context.Context, taskID, title, description string, status application.TaskStatus, userID string) error {
+		executeFunc: func(ctx context.Context, taskID, title, description string, status application.TaskStatus, imagePath, userID string) error {
 			if taskID != "task-123" {
 				t.Errorf("Expected taskID 'task-123', got %s", taskID)
 			}
@@ -426,7 +426,7 @@ func TestUpdateTask_InvalidJSON(t *testing.T) {
 
 func TestUpdateTask_InvalidStatus(t *testing.T) {
 	mockUpdate := &mockUpdateTaskUseCase{
-		executeFunc: func(ctx context.Context, taskID, title, description string, status application.TaskStatus, userID string) error {
+		executeFunc: func(ctx context.Context, taskID, title, description string, status application.TaskStatus, imagePath, userID string) error {
 			return errors.New("invalid task status")
 		},
 	}
@@ -455,7 +455,7 @@ func TestUpdateTask_InvalidStatus(t *testing.T) {
 
 func TestUpdateTask_NoPermission(t *testing.T) {
 	mockUpdate := &mockUpdateTaskUseCase{
-		executeFunc: func(ctx context.Context, taskID, title, description string, status application.TaskStatus, userID string) error {
+		executeFunc: func(ctx context.Context, taskID, title, description string, status application.TaskStatus, imagePath, userID string) error {
 			return errors.New("user does not have permission to modify this task")
 		},
 	}

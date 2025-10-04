@@ -72,6 +72,9 @@ func main() {
 	// PDF handler
 	pdfHandler := handler.NewPDFHandler(exportTasksPDF)
 
+	// Upload handler
+	uploadHandler := handler.NewUploadHandler("uploads/images")
+
 	// Setup router
 	mux := http.NewServeMux()
 
@@ -127,6 +130,15 @@ func main() {
 
 	mux.Handle("/web/tasks", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))
 	mux.Handle("/web/tasks/", middleware.AuthMiddleware(jwtSecret)(protectedWebAPIMux))
+
+	// Upload route (protected with JWT)
+	uploadMux := http.NewServeMux()
+	uploadMux.HandleFunc("POST /image", uploadHandler.UploadImage)
+	mux.Handle("/upload/", http.StripPrefix("/upload", middleware.AuthMiddleware(jwtSecret)(uploadMux)))
+
+	// Serve uploaded files
+	fs := http.FileServer(http.Dir("."))
+	mux.Handle("/uploads/", fs)
 
 	// Apply global middlewares
 	handler := middleware.Chain(

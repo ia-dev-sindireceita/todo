@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     description TEXT,
     status TEXT NOT NULL CHECK(status IN ('pending', 'in_progress', 'completed')),
     owner_id TEXT NOT NULL,
+    image_path TEXT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE

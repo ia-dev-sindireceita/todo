@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ia-edev-sindireceita/todo/internal/domain/application"
@@ -70,6 +73,34 @@ func (uc *ExportTasksPDFUseCase) Execute(ctx context.Context, ownerID string) ([
 				pdf.MultiCell(190, 5, tr(fmt.Sprintf("Descricao: %s", task.Description)), "", "L", false)
 			}
 
+			// Image (if present)
+			if task.ImagePath != "" {
+				// Convert relative path to absolute path
+				imagePath := strings.TrimPrefix(task.ImagePath, "/")
+
+				// Check if file exists
+				if _, err := os.Stat(imagePath); err == nil {
+					// Get current Y position
+					currentY := pdf.GetY()
+
+					// Register image and get dimensions
+					opt := gofpdf.ImageOptions{
+						ImageType: getImageType(imagePath),
+						ReadDpi:   true,
+					}
+
+					// Calculate image size (max 200x200px = ~70x70mm at 72dpi)
+					imgWidth := 70.0  // 200px at 72dpi ≈ 70mm
+					imgHeight := 70.0
+
+					// Add image with size constraints
+					pdf.ImageOptions(imagePath, 10, currentY+2, imgWidth, imgHeight, false, opt, 0, "")
+
+					// Move Y position after image
+					pdf.SetY(currentY + imgHeight + 4)
+				}
+			}
+
 			// Created date
 			pdf.SetFont("Arial", "I", 9)
 			pdf.CellFormat(190, 5, tr(fmt.Sprintf("Criada em: %s", task.CreatedAt.Format("02/01/2006 15:04"))), "", 1, "L", false, 0, "")
@@ -100,5 +131,20 @@ func getStatusText(status application.TaskStatus) string {
 		return "Concluida"
 	default:
 		return "Desconhecido"
+	}
+}
+
+// getImageType returns the image type for gofpdf based on file extension
+func getImageType(imagePath string) string {
+	ext := strings.ToLower(filepath.Ext(imagePath))
+	switch ext {
+	case ".jpg", ".jpeg":
+		return "JPEG"
+	case ".png":
+		return "PNG"
+	case ".gif":
+		return "GIF"
+	default:
+		return "JPEG" // default fallback
 	}
 }

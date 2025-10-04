@@ -82,7 +82,7 @@ func TestCompleteTaskUseCase_Execute(t *testing.T) {
 			taskID: "task-1",
 			userID: "user-1",
 			setupTask: func(repo *mockTaskRepositoryForComplete) {
-				task, _ := application.NewTask("task-1", "Test Task", "Description", application.StatusPending, "user-1")
+				task, _ := application.NewTask("task-1", "Test Task", "Description", application.StatusPending, "user-1", "")
 				repo.tasks["task-1"] = task
 			},
 			canModify:  true,
@@ -94,7 +94,7 @@ func TestCompleteTaskUseCase_Execute(t *testing.T) {
 			taskID: "task-2",
 			userID: "user-1",
 			setupTask: func(repo *mockTaskRepositoryForComplete) {
-				task, _ := application.NewTask("task-2", "Test Task", "Description", application.StatusInProgress, "user-1")
+				task, _ := application.NewTask("task-2", "Test Task", "Description", application.StatusInProgress, "user-1", "")
 				repo.tasks["task-2"] = task
 			},
 			canModify:  true,
@@ -117,7 +117,7 @@ func TestCompleteTaskUseCase_Execute(t *testing.T) {
 			taskID: "task-3",
 			userID: "user-2",
 			setupTask: func(repo *mockTaskRepositoryForComplete) {
-				task, _ := application.NewTask("task-3", "Test Task", "Description", application.StatusPending, "user-1")
+				task, _ := application.NewTask("task-3", "Test Task", "Description", application.StatusPending, "user-1", "")
 				repo.tasks["task-3"] = task
 			},
 			canModify: false,
@@ -129,7 +129,7 @@ func TestCompleteTaskUseCase_Execute(t *testing.T) {
 			taskID: "task-4",
 			userID: "user-1",
 			setupTask: func(repo *mockTaskRepositoryForComplete) {
-				task, _ := application.NewTask("task-4", "Test Task", "Description", application.StatusCompleted, "user-1")
+				task, _ := application.NewTask("task-4", "Test Task", "Description", application.StatusCompleted, "user-1", "")
 				repo.tasks["task-4"] = task
 			},
 			canModify: true,

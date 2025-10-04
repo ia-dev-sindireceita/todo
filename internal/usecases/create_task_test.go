@@ -19,6 +19,7 @@ func TestCreateTaskUseCase_Execute(t *testing.T) {
 		title       string
 		description string
 		ownerID     string
+		imagePath   string
 		wantErr     bool
 	}{
 		{
@@ -26,6 +27,15 @@ func TestCreateTaskUseCase_Execute(t *testing.T) {
 			title:       "Buy groceries",
 			description: "Milk, bread, eggs",
 			ownerID:     "user-1",
+			imagePath:   "",
+			wantErr:     false,
+		},
+		{
+			name:        "valid task creation with image",
+			title:       "Buy groceries",
+			description: "Milk, bread, eggs",
+			ownerID:     "user-1",
+			imagePath:   "/uploads/images/test.jpg",
 			wantErr:     false,
 		},
 		{
@@ -33,6 +43,7 @@ func TestCreateTaskUseCase_Execute(t *testing.T) {
 			title:       "",
 			description: "Description",
 			ownerID:     "user-1",
+			imagePath:   "",
 			wantErr:     true,
 		},
 		{
@@ -40,13 +51,14 @@ func TestCreateTaskUseCase_Execute(t *testing.T) {
 			title:       "Buy groceries",
 			description: "Description",
 			ownerID:     "",
+			imagePath:   "",
 			wantErr:     true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, err := useCase.Execute(context.Background(), tt.title, tt.description, tt.ownerID)
+			task, err := useCase.Execute(context.Background(), tt.title, tt.description, tt.ownerID, tt.imagePath)
 
 			if tt.wantErr {
 				if err == nil {
@@ -73,6 +85,9 @@ func TestCreateTaskUseCase_Execute(t *testing.T) {
 			}
 			if task.OwnerID != tt.ownerID {
 				t.Errorf("Task.OwnerID = %v, want %v", task.OwnerID, tt.ownerID)
+			}
+			if task.ImagePath != tt.imagePath {
+				t.Errorf("Task.ImagePath = %v, want %v", task.ImagePath, tt.imagePath)
 			}
 			if task.Status != application.StatusPending {
 				t.Errorf("Task.Status = %v, want %v", task.Status, application.StatusPending)

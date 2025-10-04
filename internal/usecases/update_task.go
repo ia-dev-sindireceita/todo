@@ -24,7 +24,7 @@ func NewUpdateTaskUseCase(taskRepo repository.TaskRepository, taskService *servi
 }
 
 // Execute updates a task
-func (uc *UpdateTaskUseCase) Execute(ctx context.Context, taskID, title, description string, status application.TaskStatus, userID string) error {
+func (uc *UpdateTaskUseCase) Execute(ctx context.Context, taskID, title, description string, status application.TaskStatus, imagePath, userID string) error {
 	// Check if user can modify task
 	canModify, err := uc.taskService.CanUserModifyTask(ctx, taskID, userID)
 	if err != nil {
@@ -41,7 +41,7 @@ func (uc *UpdateTaskUseCase) Execute(ctx context.Context, taskID, title, descrip
 	}
 
 	// Update task with validation
-	if err := task.Update(title, description, status); err != nil {
+	if err := task.Update(title, description, status, imagePath); err != nil {
 		return err
 	}
 

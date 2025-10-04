@@ -21,12 +21,12 @@ func NewCreateTaskUseCase(taskRepo repository.TaskRepository) *CreateTaskUseCase
 }
 
 // Execute creates a new task
-func (uc *CreateTaskUseCase) Execute(ctx context.Context, title, description, ownerID string) (*application.Task, error) {
+func (uc *CreateTaskUseCase) Execute(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error) {
 	// Generate unique ID
 	id := uuid.New().String()
 
 	// Create task entity with validation
-	task, err := application.NewTask(id, title, description, application.StatusPending, ownerID)
+	task, err := application.NewTask(id, title, description, application.StatusPending, ownerID, imagePath)
 	if err != nil {
 		return nil, err
 	}

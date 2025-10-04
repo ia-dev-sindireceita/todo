@@ -15,7 +15,7 @@ func TestShareTaskUseCase_Execute_Success(t *testing.T) {
 	ownerID := "user-1"
 	shareWithUserID := "user-2"
 
-	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID, "")
 
 	taskRepo := &mockTaskRepositoryForShare{
 		tasks: map[string]*application.Task{
@@ -45,7 +45,7 @@ func TestShareTaskUseCase_Execute_OnlyOwnerCanShare(t *testing.T) {
 	nonOwnerID := "user-2"
 	shareWithUserID := "user-3"
 
-	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID, "")
 
 	taskRepo := &mockTaskRepositoryForShare{
 		tasks: map[string]*application.Task{
@@ -77,7 +77,7 @@ func TestShareTaskUseCase_Execute_CannotShareWithSelf(t *testing.T) {
 	taskID := "task-1"
 	ownerID := "user-1"
 
-	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID)
+	task, _ := application.NewTask(taskID, "Test Task", "Description", application.StatusPending, ownerID, "")
 
 	taskRepo := &mockTaskRepositoryForShare{
 		tasks: map[string]*application.Task{

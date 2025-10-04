@@ -55,7 +55,7 @@ func (m *mockTaskRepository) FindSharedWithUser(ctx context.Context, userID stri
 }
 
 func TestTaskService_CanUserAccessTask(t *testing.T) {
-	task, _ := application.NewTask("task-1", "Test Task", "Description", application.StatusPending, "user-1")
+	task, _ := application.NewTask("task-1", "Test Task", "Description", application.StatusPending, "user-1", "")
 
 	mockRepo := &mockTaskRepository{
 		tasks: map[string]*application.Task{
@@ -161,7 +161,7 @@ func (m *mockShareRepository) IsSharedWith(ctx context.Context, taskID, userID s
 }
 
 func TestTaskService_CanUserModifyTask(t *testing.T) {
-	task, _ := application.NewTask("task-1", "Test Task", "Description", application.StatusPending, "user-1")
+	task, _ := application.NewTask("task-1", "Test Task", "Description", application.StatusPending, "user-1", "")
 
 	mockRepo := &mockTaskRepository{
 		tasks: map[string]*application.Task{

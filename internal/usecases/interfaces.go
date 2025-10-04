@@ -18,7 +18,7 @@ type RegisterUseCaseInterface interface {
 
 // CreateTaskUseCaseInterface defines the interface for creating tasks
 type CreateTaskUseCaseInterface interface {
-	Execute(ctx context.Context, title, description, ownerID string) (*application.Task, error)
+	Execute(ctx context.Context, title, description, ownerID, imagePath string) (*application.Task, error)
 }
 
 // GetTaskUseCaseInterface defines the interface for getting a single task
@@ -28,7 +28,7 @@ type GetTaskUseCaseInterface interface {
 
 // UpdateTaskUseCaseInterface defines the interface for updating tasks
 type UpdateTaskUseCaseInterface interface {
-	Execute(ctx context.Context, taskID, title, description string, status application.TaskStatus, userID string) error
+	Execute(ctx context.Context, taskID, title, description string, status application.TaskStatus, imagePath, userID string) error
 }
 
 // DeleteTaskUseCaseInterface defines the interface for deleting tasks
