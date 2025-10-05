@@ -1,76 +1,91 @@
 {{ define "content" }}
 <div class="px-4 py-6">
     <div class="mb-8">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-gray-900">Minhas Tarefas</h2>
-            <div class="flex space-x-2">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold tracking-tight">Minhas Tarefas</h2>
+            <div class="flex gap-2">
                 <a href="/api/tasks/export/pdf"
-                   class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 inline-flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   class="btn-default inline-flex items-center gap-2 transition-all duration-200 hover:scale-105"
+                   aria-label="Exportar tarefas em PDF">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     Exportar PDF
                 </a>
                 <button hx-post="/web/auth/logout"
-                        class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                        class="btn-secondary transition-all duration-200 hover:scale-105"
+                        aria-label="Sair da conta">
                     Sair
                 </button>
             </div>
         </div>
 
         <!-- Create Task Form -->
-        <div class="bg-white shadow rounded-lg p-6 mb-6">
-            <h3 class="text-lg font-semibold mb-4">Nova Tarefa</h3>
-            <form hx-post="/web/tasks" hx-target="#task-list" hx-swap="afterbegin" hx-encoding="multipart/form-data" class="space-y-4">
-                <div>
-                    <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
-                    <input type="text" id="title" name="title" required
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
-                </div>
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700">Descrição</label>
-                    <textarea id="description" name="description" rows="3"
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border"></textarea>
-                </div>
-                <div>
-                    <label for="image" class="block text-sm font-medium text-gray-700">Imagem (opcional)</label>
-                    <input type="file" id="image" name="image" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                    <p class="mt-1 text-xs text-gray-500">JPG, PNG, GIF ou WebP (máx. 10MB)</p>
-                </div>
-                <button type="submit"
-                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    Criar Tarefa
-                </button>
-            </form>
+        <div class="card mb-6">
+            <div class="card-header">
+                <h3 class="card-title text-lg">Nova Tarefa</h3>
+            </div>
+            <div class="card-content">
+                <form hx-post="/web/tasks" hx-target="#task-list" hx-swap="afterbegin" hx-encoding="multipart/form-data" class="space-y-4">
+                    <div class="space-y-2">
+                        <label for="title" class="label">Título</label>
+                        <input type="text" id="title" name="title" required
+                               class="input"
+                               placeholder="Digite o título da tarefa"
+                               aria-required="true">
+                    </div>
+                    <div class="space-y-2">
+                        <label for="description" class="label">Descrição</label>
+                        <textarea id="description" name="description" rows="3"
+                                  class="textarea"
+                                  placeholder="Adicione uma descrição (opcional)"
+                                  aria-label="Descrição da tarefa"></textarea>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="image" class="label">Imagem (opcional)</label>
+                        <input type="file" id="image" name="image" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                               class="input file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                               aria-label="Upload de imagem">
+                        <p class="text-xs text-muted-foreground">JPG, PNG, GIF ou WebP (máx. 10MB)</p>
+                    </div>
+                    <button type="submit"
+                            class="btn-default w-full transition-all duration-200 hover:scale-105"
+                            aria-label="Criar nova tarefa">
+                        Criar Tarefa
+                    </button>
+                </form>
+            </div>
         </div>
 
         <!-- Task List -->
         <div id="task-list" class="space-y-4">
             {{ range .Tasks }}
-            <div class="bg-white shadow rounded-lg p-6" id="task-{{ .ID }}">
-                <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ .Title }}</h3>
-                        <p class="text-gray-600 mt-1">{{ .Description }}</p>
+            <div class="card" id="task-{{ .ID }}">
+                <div class="card-content pt-6">
+                    <div class="flex justify-between items-start gap-4">
+                        <div class="flex-1 space-y-3">
+                            <h3 class="text-lg font-semibold leading-none tracking-tight">{{ .Title }}</h3>
+                            <p class="text-sm text-muted-foreground">{{ .Description }}</p>
                         {{ if .ImagePath }}
-                        <div class="mt-3" id="task-{{ .ID }}-image">
-                            <img src="{{ .ImagePath }}" alt="Task image" class="max-w-[200px] max-h-[200px] object-cover rounded-lg shadow-sm">
+                        <div id="task-{{ .ID }}-image">
+                            <img src="{{ .ImagePath }}" alt="Imagem da tarefa" class="max-w-[200px] max-h-[200px] object-cover rounded-md border">
                             {{ if ne .Status "completed" }}
                             {{ if eq .OwnerID $.UserID }}
-                            <div class="mt-2 flex space-x-2">
+                            <div class="mt-2 flex gap-2">
                                 <button hx-delete="/web/tasks/{{ .ID }}/image"
                                         hx-target="#task-{{ .ID }}-image"
                                         hx-swap="outerHTML"
                                         hx-confirm="Tem certeza que deseja excluir esta imagem?"
-                                        class="text-red-600 hover:text-red-800 text-sm">
-                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="btn-ghost btn-sm inline-flex items-center gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
+                                        aria-label="Excluir imagem da tarefa">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                     </svg>
                                     Excluir imagem
                                 </button>
-                                <label class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer">
-                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <label class="btn-ghost btn-sm inline-flex items-center gap-1 cursor-pointer transition-all duration-200 hover:bg-muted hover:scale-105"
+                                       aria-label="Substituir imagem da tarefa">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                                     </svg>
                                     Substituir imagem
@@ -81,35 +96,35 @@
                                            hx-target="#task-{{ .ID }}-image"
                                            hx-swap="outerHTML"
                                            name="image"
-                                           class="hidden">
+                                           class="hidden"
+                                           aria-label="Selecionar nova imagem">
                                 </label>
                             </div>
                             {{ end }}
                             {{ end }}
                         </div>
                         {{ end }}
-                        <div class="mt-2 flex items-center space-x-2">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ if eq .Status "pending" }}bg-yellow-100 text-yellow-800
-                                {{ else if eq .Status "in_progress" }}bg-blue-100 text-blue-800
-                                {{ else }}bg-green-100 text-green-800{{ end }}">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="badge {{ if eq .Status "pending" }}bg-yellow-500 text-white border-yellow-500
+                                {{ else if eq .Status "in_progress" }}badge-default
+                                {{ else }}bg-green-500 text-white border-green-500{{ end }}">
                                 {{ if eq .Status "pending" }}Pendente
                                 {{ else if eq .Status "in_progress" }}Em Progresso
                                 {{ else }}Concluída{{ end }}
                             </span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ if eq .OwnerID $.UserID }}bg-blue-100 text-blue-800
-                                {{ else }}bg-purple-100 text-purple-800{{ end }}">
+                            <span class="badge {{ if eq .OwnerID $.UserID }}badge-secondary
+                                {{ else }}bg-purple-500 text-white border-purple-500{{ end }}">
                                 {{ if eq .OwnerID $.UserID }}Própria{{ else }}Compartilhada{{ end }}
                             </span>
-                            <span class="text-sm text-gray-500">{{ .CreatedAt.Format "02/01/2006 15:04" }}</span>
+                            <span class="text-xs text-muted-foreground">{{ .CreatedAt.Format "02/01/2006 15:04" }}</span>
                         </div>
                     </div>
-                    <div class="flex space-x-2 ml-4">
+                    <div class="flex gap-2">
                         {{ if ne .Status "completed" }}
                         <button hx-post="/web/tasks/{{ .ID }}/complete" hx-target="#task-{{ .ID }}" hx-swap="outerHTML"
-                                class="text-green-600 hover:text-green-800 font-medium">
-                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="btn-ghost btn-sm inline-flex items-center gap-1 text-green-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200"
+                                aria-label="Marcar tarefa como concluída">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                             Concluir
@@ -122,8 +137,9 @@
                                 hx-swap="outerHTML"
                                 hx-prompt="Digite o email do usuário com quem deseja compartilhar:"
                                 hx-vals='js:{share_with_user_id: prompt("Digite o email do usuário:")}'
-                                class="text-blue-600 hover:text-blue-800 font-medium">
-                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="btn-ghost btn-sm inline-flex items-center gap-1 transition-all duration-200 hover:bg-muted"
+                                aria-label="Compartilhar tarefa com outro usuário">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
                             </svg>
                             Compartilhar
@@ -132,8 +148,9 @@
                         {{ end }}
                         <button hx-delete="/web/tasks/{{ .ID }}" hx-target="#task-{{ .ID }}" hx-swap="outerHTML"
                                 hx-confirm="Tem certeza que deseja excluir esta tarefa?"
-                                class="text-red-600 hover:text-red-800">
-                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="btn-ghost btn-sm inline-flex items-center gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
+                                aria-label="Excluir tarefa">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
                             Excluir
@@ -142,8 +159,10 @@
                 </div>
             </div>
             {{ else }}
-            <div class="bg-white shadow rounded-lg p-6 text-center text-gray-500">
-                Nenhuma tarefa encontrada. Crie sua primeira tarefa acima!
+            <div class="card">
+                <div class="card-content pt-6 text-center text-muted-foreground">
+                    Nenhuma tarefa encontrada. Crie sua primeira tarefa acima!
+                </div>
             </div>
             {{ end }}
         </div>
