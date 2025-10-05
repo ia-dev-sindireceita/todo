@@ -1,5 +1,6 @@
 # Binaries
 todo-app
+server
 *.exe
 *.exe~
 *.dll
