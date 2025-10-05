@@ -61,12 +61,49 @@ export RATE_LIMIT_GENERAL=100    # Requisições por minuto para rotas normais
 export RATE_LIMIT_AUTH=5          # Requisições por minuto para rotas de autenticação
 export RATE_LIMIT_WINDOW=60       # Janela de tempo em segundos
 
+# Trusted Proxies (Segurança contra IP Spoofing)
+# Lista de IPs de proxies/load balancers confiáveis separados por vírgula
+# Se não configurado, apenas RemoteAddr é usado (mais seguro)
+# Exemplo: export TRUSTED_PROXIES="127.0.0.1,10.0.0.1"
+export TRUSTED_PROXIES=""
+
 # JWT Secret (OBRIGATÓRIO em produção)
 export JWT_SECRET="your-secret-key-here"
 
 # Executar
 ./todo-app
 ```
+
+#### ⚠️ Importante: Configuração de Proxies Confiáveis
+
+O rate limiting usa o endereço IP do cliente para limitar requisições. Por padrão, **apenas o IP real da conexão (`RemoteAddr`) é usado**, ignorando headers HTTP como `X-Forwarded-For` e `X-Real-IP`.
+
+**Quando usar `TRUSTED_PROXIES`:**
+- ✅ Aplicação está atrás de proxy reverso (nginx, Apache)
+- ✅ Aplicação está atrás de load balancer (AWS ELB, GCP Load Balancer)
+- ✅ Aplicação está atrás de CDN (Cloudflare, CloudFront)
+
+**Como configurar:**
+1. Identifique os IPs dos seus proxies/load balancers
+2. Configure `TRUSTED_PROXIES` com esses IPs separados por vírgula
+3. Apenas requisições vindas desses IPs poderão definir o IP do cliente via headers
+
+**Exemplo de configuração:**
+```bash
+# Nginx/Apache local
+export TRUSTED_PROXIES="127.0.0.1"
+
+# Load balancer interno
+export TRUSTED_PROXIES="10.0.1.10,10.0.1.11"
+
+# Múltiplos proxies
+export TRUSTED_PROXIES="127.0.0.1,10.0.1.10,172.16.0.5"
+```
+
+**⚠️ Segurança:**
+- **NÃO** configure `TRUSTED_PROXIES` se não estiver usando proxy
+- **NÃO** adicione IPs que você não controla
+- Headers de proxy podem ser facilmente forjados se não validados corretamente
 
 ## 🧪 Testes
 

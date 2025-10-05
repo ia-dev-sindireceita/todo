@@ -13,6 +13,7 @@ import (
 type RateLimitConfig struct {
 	RequestsPerMinute int
 	Window            time.Duration
+	TrustedProxies    []string // List of trusted proxy IPs that can set X-Forwarded-For headers
 }
 
 // clientInfo stores rate limiting data for a specific client
@@ -117,15 +118,42 @@ func (rl *rateLimiter) allow(ip string) (allowed bool, remaining int, resetTime 
 	return false, 0, resetTime
 }
 
+// isTrustedProxy checks if the given IP is in the list of trusted proxies
+func isTrustedProxy(ip string, trustedProxies []string) bool {
+	for _, trusted := range trustedProxies {
+		if ip == trusted {
+			return true
+		}
+	}
+	return false
+}
+
 // extractIP extracts the client IP from the request
-func extractIP(r *http.Request) string {
+// It only accepts proxy headers (X-Forwarded-For, X-Real-IP) if the request
+// comes from a trusted proxy, preventing IP spoofing attacks
+func extractIP(r *http.Request, trustedProxies []string) string {
+	// Extract the real remote IP
+	remoteIP := r.RemoteAddr
+	if host, _, err := net.SplitHostPort(remoteIP); err == nil {
+		remoteIP = host
+	}
+
+	// Only accept proxy headers if the request comes from a trusted proxy
+	if !isTrustedProxy(remoteIP, trustedProxies) {
+		// Not from a trusted proxy - use the actual remote address
+		return remoteIP
+	}
+
+	// Request is from a trusted proxy - check proxy headers
+
 	// Check X-Forwarded-For header (used by proxies/load balancers)
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		// X-Forwarded-For can contain multiple IPs, take the first one
-		if host, _, err := net.SplitHostPort(xff); err == nil {
-			return host
+		// X-Forwarded-For can contain multiple IPs (client, proxy1, proxy2, ...)
+		// Take only the first one (the original client IP)
+		ips := splitAndTrim(xff, ",")
+		if len(ips) > 0 && ips[0] != "" {
+			return ips[0]
 		}
-		return xff
 	}
 
 	// Check X-Real-IP header (alternative proxy header)
@@ -133,12 +161,59 @@ func extractIP(r *http.Request) string {
 		return xri
 	}
 
-	// Fall back to RemoteAddr
-	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-		return host
+	// Fallback to remote address if headers are not present
+	return remoteIP
+}
+
+// splitAndTrim splits a string by a delimiter and trims whitespace from each part
+func splitAndTrim(s string, sep string) []string {
+	parts := []string{}
+	for _, part := range splitString(s, sep) {
+		trimmed := trimSpace(part)
+		if trimmed != "" {
+			parts = append(parts, trimmed)
+		}
+	}
+	return parts
+}
+
+// splitString splits a string by a delimiter
+func splitString(s string, sep string) []string {
+	if s == "" {
+		return []string{}
 	}
 
-	return r.RemoteAddr
+	result := []string{}
+	start := 0
+
+	for i := 0; i < len(s); i++ {
+		if i+len(sep) <= len(s) && s[i:i+len(sep)] == sep {
+			result = append(result, s[start:i])
+			start = i + len(sep)
+			i += len(sep) - 1
+		}
+	}
+	result = append(result, s[start:])
+
+	return result
+}
+
+// trimSpace removes leading and trailing whitespace from a string
+func trimSpace(s string) string {
+	start := 0
+	end := len(s)
+
+	// Trim leading whitespace
+	for start < end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n' || s[start] == '\r') {
+		start++
+	}
+
+	// Trim trailing whitespace
+	for end > start && (s[end-1] == ' ' || s[end-1] == '\t' || s[end-1] == '\n' || s[end-1] == '\r') {
+		end--
+	}
+
+	return s[start:end]
 }
 
 // RateLimitMiddleware creates a middleware that limits requests per IP address
@@ -147,7 +222,7 @@ func RateLimitMiddleware(config RateLimitConfig) func(http.Handler) http.Handler
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip := extractIP(r)
+			ip := extractIP(r, config.TrustedProxies)
 
 			allowed, remaining, resetTime := limiter.allow(ip)
 

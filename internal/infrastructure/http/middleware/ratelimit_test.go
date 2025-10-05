@@ -341,3 +341,195 @@ func TestRateLimitMiddleware_ErrorMessage(t *testing.T) {
 		t.Error("expected error message in response body")
 	}
 }
+
+// TestRateLimitMiddleware_IPSpoofingProtection tests protection against IP spoofing
+func TestRateLimitMiddleware_IPSpoofingProtection(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Config without trusted proxies - should ignore X-Forwarded-For headers
+	config := RateLimitConfig{
+		RequestsPerMinute: 3,
+		Window:            time.Minute,
+		TrustedProxies:    []string{}, // No trusted proxies
+	}
+	middleware := RateLimitMiddleware(config)
+	wrappedHandler := middleware(handler)
+
+	// Make 3 requests with different X-Forwarded-For values
+	// All should count as the same IP (192.168.1.100)
+	for i := 0; i < 3; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.RemoteAddr = "192.168.1.100:12345" // Same real IP
+		req.Header.Set("X-Forwarded-For", "10.0.0."+string(rune('1'+i))) // Different forged IPs
+		w := httptest.NewRecorder()
+		wrappedHandler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("request %d should succeed (same real IP)", i+1)
+		}
+	}
+
+	// 4th request should fail because we've exhausted the limit for the real IP
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.RemoteAddr = "192.168.1.100:12345"
+	req.Header.Set("X-Forwarded-For", "10.0.0.99") // Different forged IP
+	w := httptest.NewRecorder()
+	wrappedHandler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusTooManyRequests {
+		t.Error("spoofed IP should not bypass rate limiting")
+	}
+}
+
+// TestRateLimitMiddleware_TrustedProxy tests that trusted proxies can set X-Forwarded-For
+func TestRateLimitMiddleware_TrustedProxy(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Config with trusted proxy
+	config := RateLimitConfig{
+		RequestsPerMinute: 3,
+		Window:            time.Minute,
+		TrustedProxies:    []string{"127.0.0.1"}, // Trust localhost
+	}
+	middleware := RateLimitMiddleware(config)
+	wrappedHandler := middleware(handler)
+
+	// Make 3 requests from trusted proxy with different client IPs
+	for i := 0; i < 3; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.RemoteAddr = "127.0.0.1:12345" // Trusted proxy
+		req.Header.Set("X-Forwarded-For", "10.0.0."+string(rune('1'+i))) // Different client IPs
+		w := httptest.NewRecorder()
+		wrappedHandler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("request %d from trusted proxy should succeed", i+1)
+		}
+	}
+
+	// 4th request from trusted proxy with a new client IP should succeed
+	// because it's a different client
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.RemoteAddr = "127.0.0.1:12345"
+	req.Header.Set("X-Forwarded-For", "10.0.0.99")
+	w := httptest.NewRecorder()
+	wrappedHandler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Error("new client IP from trusted proxy should succeed")
+	}
+
+	// But 4 requests from the same client IP should fail
+	for i := 0; i < 3; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.RemoteAddr = "127.0.0.1:12345"
+		req.Header.Set("X-Forwarded-For", "10.0.0.1") // Same client IP
+		w := httptest.NewRecorder()
+		wrappedHandler.ServeHTTP(w, req)
+	}
+
+	// 4th request from same client should fail
+	req4 := httptest.NewRequest("GET", "/test", nil)
+	req4.RemoteAddr = "127.0.0.1:12345"
+	req4.Header.Set("X-Forwarded-For", "10.0.0.1")
+	w4 := httptest.NewRecorder()
+	wrappedHandler.ServeHTTP(w4, req4)
+
+	if w4.Code != http.StatusTooManyRequests {
+		t.Error("4th request from same client IP should be blocked")
+	}
+}
+
+// TestRateLimitMiddleware_UntrustedProxyIgnored tests that untrusted proxies are ignored
+func TestRateLimitMiddleware_UntrustedProxyIgnored(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	config := RateLimitConfig{
+		RequestsPerMinute: 3,
+		Window:            time.Minute,
+		TrustedProxies:    []string{"127.0.0.1"}, // Only trust localhost
+	}
+	middleware := RateLimitMiddleware(config)
+	wrappedHandler := middleware(handler)
+
+	// Make 3 requests from untrusted proxy with different X-Forwarded-For values
+	for i := 0; i < 3; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.RemoteAddr = "192.168.1.100:12345" // Untrusted proxy
+		req.Header.Set("X-Forwarded-For", "10.0.0."+string(rune('1'+i))) // Different forged IPs
+		w := httptest.NewRecorder()
+		wrappedHandler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("request %d should succeed", i+1)
+		}
+	}
+
+	// 4th request should fail (X-Forwarded-For ignored, same real IP)
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.RemoteAddr = "192.168.1.100:12345"
+	req.Header.Set("X-Forwarded-For", "10.0.0.99")
+	w := httptest.NewRecorder()
+	wrappedHandler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusTooManyRequests {
+		t.Error("untrusted proxy should not be able to set client IP")
+	}
+}
+
+// TestRateLimitMiddleware_XForwardedForMultipleIPs tests parsing of multiple IPs in X-Forwarded-For
+func TestRateLimitMiddleware_XForwardedForMultipleIPs(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	config := RateLimitConfig{
+		RequestsPerMinute: 3,
+		Window:            time.Minute,
+		TrustedProxies:    []string{"127.0.0.1"},
+	}
+	middleware := RateLimitMiddleware(config)
+	wrappedHandler := middleware(handler)
+
+	// Request with multiple IPs in X-Forwarded-For (client, proxy1, proxy2)
+	// Should use the first IP (10.0.0.1)
+	for i := 0; i < 3; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.RemoteAddr = "127.0.0.1:12345"
+		req.Header.Set("X-Forwarded-For", "10.0.0.1, 172.16.0.1, 192.168.1.1")
+		w := httptest.NewRecorder()
+		wrappedHandler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("request %d should succeed", i+1)
+		}
+	}
+
+	// 4th request should fail (same client IP)
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.RemoteAddr = "127.0.0.1:12345"
+	req.Header.Set("X-Forwarded-For", "10.0.0.1, 172.16.0.1, 192.168.1.1")
+	w := httptest.NewRecorder()
+	wrappedHandler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusTooManyRequests {
+		t.Error("4th request from same client should be blocked")
+	}
+
+	// Request with different first IP should succeed
+	req2 := httptest.NewRequest("GET", "/test", nil)
+	req2.RemoteAddr = "127.0.0.1:12345"
+	req2.Header.Set("X-Forwarded-For", "10.0.0.2, 172.16.0.1, 192.168.1.1")
+	w2 := httptest.NewRecorder()
+	wrappedHandler.ServeHTTP(w2, req2)
+
+	if w2.Code != http.StatusOK {
+		t.Error("request from different client should succeed")
+	}
+}

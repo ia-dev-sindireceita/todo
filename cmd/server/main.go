@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ia-edev-sindireceita/todo/internal/domain/service"
@@ -28,8 +29,13 @@ func main() {
 	generalRateLimit := getEnvAsInt("RATE_LIMIT_GENERAL", 100)
 	authRateLimit := getEnvAsInt("RATE_LIMIT_AUTH", 5)
 	rateLimitWindow := getEnvAsDuration("RATE_LIMIT_WINDOW", 60)
+	trustedProxies := getEnvAsStringSlice("TRUSTED_PROXIES", []string{})
 
-	log.Printf("Rate limiting configured: General=%d/min, Auth=%d/min", generalRateLimit, authRateLimit)
+	if len(trustedProxies) > 0 {
+		log.Printf("Rate limiting configured: General=%d/min, Auth=%d/min, Trusted Proxies=%v", generalRateLimit, authRateLimit, trustedProxies)
+	} else {
+		log.Printf("Rate limiting configured: General=%d/min, Auth=%d/min (no trusted proxies - using RemoteAddr only)", generalRateLimit, authRateLimit)
+	}
 
 	// Initialize database
 	db, err := database.NewSQLiteDB("todo.db")
@@ -115,6 +121,7 @@ func main() {
 		middleware.RateLimitMiddleware(middleware.RateLimitConfig{
 			RequestsPerMinute: authRateLimit,
 			Window:            time.Duration(rateLimitWindow) * time.Second,
+			TrustedProxies:    trustedProxies,
 		}),
 		middleware.ContentTypeJSON,
 	)))
@@ -134,6 +141,7 @@ func main() {
 	mux.Handle("/web/auth/", http.StripPrefix("/web/auth", middleware.RateLimitMiddleware(middleware.RateLimitConfig{
 		RequestsPerMinute: authRateLimit,
 		Window:            time.Duration(rateLimitWindow) * time.Second,
+		TrustedProxies:    trustedProxies,
 	})(webAuthMux)))
 
 	// Protected web routes (require JWT)
@@ -168,6 +176,7 @@ func main() {
 		middleware.RateLimitMiddleware(middleware.RateLimitConfig{
 			RequestsPerMinute: generalRateLimit,
 			Window:            time.Duration(rateLimitWindow) * time.Second,
+			TrustedProxies:    trustedProxies,
 		}),
 		middleware.RecoverMiddleware,
 		middleware.LoggingMiddleware,
@@ -204,6 +213,25 @@ func getEnvAsDuration(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intVal, err := strconv.Atoi(value); err == nil {
 			return intVal
+		}
+	}
+	return defaultValue
+}
+
+// getEnvAsStringSlice reads an environment variable as comma-separated values and returns a string slice
+func getEnvAsStringSlice(key string, defaultValue []string) []string {
+	if value := os.Getenv(key); value != "" {
+		// Split by comma and trim whitespace
+		parts := strings.Split(value, ",")
+		result := make([]string, 0, len(parts))
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				result = append(result, trimmed)
+			}
+		}
+		if len(result) > 0 {
+			return result
 		}
 	}
 	return defaultValue
