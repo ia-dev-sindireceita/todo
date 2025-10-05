@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/ia-edev-sindireceita/todo/internal/domain/service"
 	"github.com/ia-edev-sindireceita/todo/internal/infrastructure/database"
@@ -21,6 +23,13 @@ func main() {
 		jwtSecret = "development-secret-key-change-in-production"
 		log.Println("WARNING: Using default JWT secret. Set JWT_SECRET environment variable in production!")
 	}
+
+	// Rate limiting configuration
+	generalRateLimit := getEnvAsInt("RATE_LIMIT_GENERAL", 100)
+	authRateLimit := getEnvAsInt("RATE_LIMIT_AUTH", 5)
+	rateLimitWindow := getEnvAsDuration("RATE_LIMIT_WINDOW", 60)
+
+	log.Printf("Rate limiting configured: General=%d/min, Auth=%d/min", generalRateLimit, authRateLimit)
 
 	// Initialize database
 	db, err := database.NewSQLiteDB("todo.db")
@@ -97,12 +106,16 @@ func main() {
 		middleware.ContentTypeJSON,
 	)))
 
-	// Auth API routes (no auth required)
+	// Auth API routes (no auth required, stricter rate limit)
 	authMux := http.NewServeMux()
 	authMux.HandleFunc("POST /login", authHandler.Login)
 	authMux.HandleFunc("POST /register", authHandler.Register)
 	mux.Handle("/api/auth/", http.StripPrefix("/api/auth", middleware.Chain(
 		authMux,
+		middleware.RateLimitMiddleware(middleware.RateLimitConfig{
+			RequestsPerMinute: authRateLimit,
+			Window:            time.Duration(rateLimitWindow) * time.Second,
+		}),
 		middleware.ContentTypeJSON,
 	)))
 
@@ -113,10 +126,15 @@ func main() {
 	webMux.HandleFunc("/register", handleRegisterPage)
 	mux.Handle("/", webMux)
 
-	// Web auth routes (no auth required)
-	mux.HandleFunc("POST /web/auth/login", authHandler.WebLogin)
-	mux.HandleFunc("POST /web/auth/register", authHandler.WebRegister)
-	mux.HandleFunc("POST /web/auth/logout", authHandler.Logout)
+	// Web auth routes (no auth required, stricter rate limit)
+	webAuthMux := http.NewServeMux()
+	webAuthMux.HandleFunc("POST /login", authHandler.WebLogin)
+	webAuthMux.HandleFunc("POST /register", authHandler.WebRegister)
+	webAuthMux.HandleFunc("POST /logout", authHandler.Logout)
+	mux.Handle("/web/auth/", http.StripPrefix("/web/auth", middleware.RateLimitMiddleware(middleware.RateLimitConfig{
+		RequestsPerMinute: authRateLimit,
+		Window:            time.Duration(rateLimitWindow) * time.Second,
+	})(webAuthMux)))
 
 	// Protected web routes (require JWT)
 	protectedWebMux := http.NewServeMux()
@@ -147,6 +165,10 @@ func main() {
 	// Apply global middlewares
 	handler := middleware.Chain(
 		mux,
+		middleware.RateLimitMiddleware(middleware.RateLimitConfig{
+			RequestsPerMinute: generalRateLimit,
+			Window:            time.Duration(rateLimitWindow) * time.Second,
+		}),
 		middleware.RecoverMiddleware,
 		middleware.LoggingMiddleware,
 		middleware.SecurityHeadersMiddleware,
@@ -165,6 +187,26 @@ func main() {
 	if err := http.ListenAndServe(":8080", handler); err != nil {
 		log.Fatal("Server failed:", err)
 	}
+}
+
+// getEnvAsInt reads an environment variable and returns it as int, or returns defaultValue
+func getEnvAsInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intVal, err := strconv.Atoi(value); err == nil {
+			return intVal
+		}
+	}
+	return defaultValue
+}
+
+// getEnvAsDuration reads an environment variable and returns it as duration in seconds, or returns defaultValue
+func getEnvAsDuration(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intVal, err := strconv.Atoi(value); err == nil {
+			return intVal
+		}
+	}
+	return defaultValue
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
