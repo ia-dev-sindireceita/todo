@@ -33,6 +33,7 @@ internal/
 - ✅ **Security Headers**: X-Content-Type-Options, X-Frame-Options, CSP, HSTS
 - ✅ **Input Sanitization**: Validação de tipos, tamanhos e formatos
 - ✅ **Error Handling**: Erros genéricos para o cliente, detalhes apenas em logs
+- ✅ **Rate Limiting**: Proteção contra ataques DoS e brute-force com limites configuráveis
 
 ## 🚀 Como Executar
 
@@ -49,6 +50,23 @@ go build -o todo-app ./cmd/server/
 ```
 
 O servidor iniciará em `http://localhost:8080`
+
+### 3. Configuração (Opcional)
+
+Variáveis de ambiente disponíveis:
+
+```bash
+# Rate limiting (padrões configurados para segurança)
+export RATE_LIMIT_GENERAL=100    # Requisições por minuto para rotas normais
+export RATE_LIMIT_AUTH=5          # Requisições por minuto para rotas de autenticação
+export RATE_LIMIT_WINDOW=60       # Janela de tempo em segundos
+
+# JWT Secret (OBRIGATÓRIO em produção)
+export JWT_SECRET="your-secret-key-here"
+
+# Executar
+./todo-app
+```
 
 ## 🧪 Testes
 
@@ -73,6 +91,21 @@ Para testar a API, inclua o header `X-User-ID`:
 ```bash
 curl -H "X-User-ID: user-1" http://localhost:8080/api/tasks
 ```
+
+### Rate Limiting
+
+Todas as rotas possuem rate limiting:
+
+- **Rotas normais**: 100 requisições/minuto por IP
+- **Rotas de autenticação** (`/api/auth/*`, `/web/auth/*`): 5 requisições/minuto por IP
+
+Headers de resposta:
+- `X-RateLimit-Limit`: Limite total de requisições
+- `X-RateLimit-Remaining`: Requisições restantes
+- `X-RateLimit-Reset`: Timestamp Unix quando o limite será resetado
+- `Retry-After`: Segundos até poder tentar novamente (apenas em 429)
+
+Quando o limite é excedido, retorna HTTP 429 (Too Many Requests).
 
 ### Endpoints
 
