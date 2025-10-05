@@ -55,7 +55,7 @@ export PATH=$PATH:/usr/local/go/bin/ && go build
 
 ### Run
 ```bash
-export PATH=$PATH:/usr/local/go/bin/ && go run .
+export PATH=$PATH:/usr/local/go/bin/ && go run cmd/server/main.go
 ```
 
 ### Test
